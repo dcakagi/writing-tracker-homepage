@@ -30,6 +30,13 @@ button {
   transform: none;
 }
 
+#backup-controls #wt-exportBtn,
+#backup-controls label {
+  display: inline-flex;
+  height: 2rem;
+  align-items: center;
+}
+
 /* The same backup actions live in the local pill or the sync dropdown. */
 #backup-controls-copy,
 #app-auth-trigger #wt-importMsg {

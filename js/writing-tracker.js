@@ -195,7 +195,7 @@ function wtShowSessionMessage(message, tone = 'info') {
 function wtCheckExportReminder() {
   const homepageState = window.HomepageState;
   if (homepageState && typeof homepageState.isRemoteSyncActive === 'function' && homepageState.isRemoteSyncActive()) {
-    wtExportBtn.className = "bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-medium hover:bg-gray-600 transition-colors";
+    wtExportBtn.className = "bg-gray-500 text-white px-3 py-2 rounded-full text-xs font-medium hover:bg-gray-600 transition-colors";
     wtExportBtn.textContent = "Export";
     wtImportMsg.textContent = "Auto-sync is on.";
     wtImportMsg.className = "text-green-600 text-xs ml-2";
@@ -212,7 +212,7 @@ function wtCheckExportReminder() {
 }
 
 function wtShowExportReminder(lastExport, now) {
-  wtExportBtn.className = "bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-medium hover:bg-orange-600 transition-colors animate-pulse";
+  wtExportBtn.className = "bg-orange-500 text-white px-3 py-2 rounded-full text-xs font-medium hover:bg-orange-600 transition-colors animate-pulse";
   wtExportBtn.textContent = "Export (backup!)";
 
   if (!lastExport) {
@@ -226,7 +226,7 @@ function wtShowExportReminder(lastExport, now) {
 
 function wtResetExportReminder() {
   localStorage.setItem(WT_CONFIG.exportKey, new Date().toISOString());
-  wtExportBtn.className = "bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-medium hover:bg-gray-600 transition-colors";
+  wtExportBtn.className = "bg-gray-500 text-white px-3 py-2 rounded-full text-xs font-medium hover:bg-gray-600 transition-colors";
   wtExportBtn.textContent = "Export";
 
   wtImportMsg.textContent = "✅ Data backed up!";

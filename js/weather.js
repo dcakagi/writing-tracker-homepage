@@ -191,8 +191,8 @@
             type: "linear",
             position: "left",
             title: { display: true, text: `Temperature (${symbol})` },
-            suggestedMin: Math.min(...temperatures) - 5,
-            suggestedMax: Math.max(...temperatures) + 5
+            min: Math.min(...temperatures) - 5,
+            max: Math.max(...temperatures) + 5
           },
           y2: {
             type: "linear",

@@ -534,7 +534,7 @@
       internal.ui.accessRequestUnconfigured.classList.toggle("hidden", !showAccessRequest || hasRequestEmail);
       internal.ui.accessRequestUnconfigured.textContent = ownerName
         ? `Email ${ownerName} to request access.`
-        : "Ask the person who shared this page to invite you.";
+        : "Ask the person who shared this page to add your email.";
     }
 
     if (internal.ui.statusPill) {

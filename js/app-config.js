@@ -32,8 +32,8 @@ window.APP_CONFIG = {
 
   timer: {
     // Can be used as a count down or count up timer. If you want a count up timer, set the start date to a date in the past.
-    start: "2027-01-01T00:00:00",
-    label: "January 1, 2026"
+    start: "2025-07-01T00:00:00",
+    label: "July 1, 2025"
   },
 
   writing: {
@@ -46,7 +46,8 @@ window.APP_CONFIG = {
     latitude: 40.2335,
     longitude: -111.667,
     temperatureUnit: "fahrenheit",
-    windspeedUnit: "mph"
+    windspeedUnit: "mph",
+    timezone: 'auto'
   },
 
   quotes: [
@@ -76,7 +77,7 @@ window.APP_CONFIG = {
     }
   ],
 
-  // Optional owner name shown to people who need an invitation.
+  // Optional owner name shown to people who need sync access.
   // Add email only if you want to publish a clickable contact address.
   accessRequest: {
     enabled: true,

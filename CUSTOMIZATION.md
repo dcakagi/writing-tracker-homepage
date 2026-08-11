@@ -281,9 +281,9 @@ project usage remain the project owner's responsibility.
 Never add a secret key, service-role key, database password, access token, or
 email-provider credential to this repository.
 
-### Offer invite-only access to a shared project
+### Offer approved-user access to a shared project
 
-A shared deployment can show an email link for people who need an invitation:
+A shared deployment can show an email link for people who need access:
 
 ```js
 accessRequest: {
@@ -311,7 +311,7 @@ already know how to contact you and you do not want to publish an address. If
 
 Both `ownerName` and any configured email address are public in the deployed
 source and repository if committed. The email link does not create an account;
-the owner must review the request and send an invitation from Supabase Auth.
+the owner must review the request and manually create a confirmed Auth user.
 Keep server-side public signup disabled.
 
 ## Before publishing

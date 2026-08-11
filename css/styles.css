@@ -1,0 +1,202 @@
+/* ===========================
+   Custom Styles for Homepage
+   =========================== */
+
+/* Base Styles */
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Gradient Animations */
+#top-left-gradient,
+#bottom-right-gradient,
+#bottom-right-gradient-secondary {
+  opacity: 0; /* Start fully transparent */
+  transition: opacity 2s ease-in-out; /* Smooth transition */
+}
+
+/* Custom Focus Styles */
+input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Button Transitions */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+#app-auth-shell button:hover {
+  transform: none;
+}
+
+/* The same backup actions live in the local pill or the sync dropdown. */
+#backup-controls-copy,
+#app-auth-trigger #wt-importMsg {
+  display: none;
+}
+
+#app-backup-slot:not(:empty) {
+  margin-top: 1rem;
+}
+
+#app-backup-slot #backup-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.75rem;
+  background: rgb(249 250 251);
+  padding: 0.75rem 1rem;
+}
+
+#app-backup-slot #backup-controls-copy {
+  display: block;
+  flex: 1 1 12rem;
+}
+
+#app-backup-slot #backup-controls label {
+  background: white;
+}
+
+#app-backup-slot #wt-importMsg {
+  display: block;
+  flex-basis: 100%;
+  min-height: 1rem;
+  margin: 0;
+}
+
+/* Card Hover Effects */
+.bg-white.shadow-lg:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Bookmark Link Hover */
+.bg-gray-100:hover {
+  transform: translateY(-2px);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Writing Tracker Specific Styles */
+#wt-timerDisplay {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Calendar Day Styles */
+.wt-calendar-day {
+  border: 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.wt-calendar-day:hover {
+  transform: scale(1.1);
+}
+
+.wt-calendar-day:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.55);
+  outline-offset: 2px;
+}
+
+#wt-editModal {
+  backdrop-filter: blur(4px);
+}
+
+#wt-editModal input::-webkit-outer-spin-button,
+#wt-editModal input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#wt-editModal input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Pulse Animation for Reminders */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  #wt-timerDisplay {
+    font-size: 3rem;
+  }
+
+  .grid.grid-cols-7 {
+    gap: 0.25rem;
+  }
+}
+
+/* Loading States */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Chart Container adjustments removed for old graph */
+/* Writing chart scrollbars: hidden by default, visible on hover */
+#wt-monthly-scroll,
+#wt-proportion-scroll {
+  scrollbar-width: none; /* Firefox */
+  scrollbar-gutter: stable;
+}
+
+#wt-monthly-scroll:hover,
+#wt-proportion-scroll:hover {
+  scrollbar-width: thin; /* Firefox */
+}
+
+#wt-monthly-scroll::-webkit-scrollbar,
+#wt-proportion-scroll::-webkit-scrollbar {
+  height: 0;
+}
+
+#wt-monthly-scroll:hover::-webkit-scrollbar,
+#wt-proportion-scroll:hover::-webkit-scrollbar {
+  height: 6px;
+}
+
+#wt-monthly-scroll::-webkit-scrollbar-thumb,
+#wt-proportion-scroll::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.45);
+  border-radius: 999px;
+}
+
+#wt-monthly-scroll::-webkit-scrollbar-track,
+#wt-proportion-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#wt-cumulative {
+  cursor: crosshair;
+}
+
+/* Success/Error Messages */
+.message-success {
+  color: #059669;
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
+.message-error {
+  color: #dc2626;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}

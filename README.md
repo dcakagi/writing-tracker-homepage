@@ -13,7 +13,8 @@ default: no account, database, or deployment is required.
 I recommend setting the file location as your browser homepage. That way you
 see it whenever you open a new browser window or tab. You can alternatively host it somewhere (see section Sharing your version).
 
-> Note: On Safari you are only allowed to set a file as your homepage for new tabs
+> [!NOTE]  
+> On Safari you are only allowed to set a file as your homepage for new tabs
 
 Your tracker data is saved in that browser's local storage. The page does not
 need Supabase unless you choose to enable cloud sync.
@@ -50,18 +51,19 @@ want your tracker data to follow you across browsers or devices, you have two
 options:
 
 - Click the background of the **Export / Import** pill to open the optional
-  sync information, email the named owner, and wait for an invitation. The
+  sync information, email the named owner, and wait for them to approve and add
+  your address. The
   owner may intentionally list only a name, so you may need to use contact
   information you already have.
 - Create a Supabase project you control and follow
   [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
 Use only a Supabase project you control or a shared project whose owner has
-explicitly invited you. Never put a Supabase secret or service-role key in
+explicitly approved you. Never put a Supabase secret or service-role key in
 frontend code.
 
 Owners who offer shared sync must keep public signup disabled, review requests,
-send invitations manually, and monitor usage. `accessRequest.ownerName` can
+create approved Auth users manually, and monitor usage. `accessRequest.ownerName` can
 show a name without publishing an address; setting `accessRequest.email` adds a
 clickable mail link and makes that address visible in the page source.
 
@@ -109,3 +111,8 @@ You can publish the static files with any static host. Keep Supabase disabled
 unless you have configured your own project. Before committing, review
 `js/app-config.js` and replace anything you would not want visible in a public
 repository.
+
+## Feature requests and issues
+
+Feel free to open pull requests for changes or upgrades you have made. If you come across an issue,
+you can also submit it as a Github issue. Feel free to also request features or share ideas with me!

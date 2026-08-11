@@ -4,6 +4,8 @@ A configurable, no-build dashboard for bookmarks, writing progress, habits,
 weather, quotes, and a personal countdown/count-up timer. It works locally by
 default: no account, database, or deployment is required.
 
+![](assets/screenshot.png)
+
 ## Quick start
 
 1. Download or clone this repository.

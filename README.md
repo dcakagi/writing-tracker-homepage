@@ -111,6 +111,25 @@ names, email addresses, URLs, coordinates, credentials, and identifiers.
 └── SUPABASE_SETUP.md      # Optional Supabase walkthrough
 ```
 
+## Host it with GitHub Pages
+
+This repository includes a no-build GitHub Pages workflow. For this repository,
+the project-site URL would follow the same pattern as the following:
+
+`https://bradygm.github.io/writing-tracker-homepage/`
+
+To enable it once:
+
+1. Push the repository to GitHub.
+2. Open **Settings → Pages** in the GitHub repository.
+3. Under **Build and deployment → Source**, choose **GitHub Actions**.
+4. Open the **Actions** tab and watch **Deploy GitHub Pages** complete.
+5. Open the URL shown by the completed deployment.
+
+Every later push to `main` redeploys the site automatically. The project uses
+relative asset paths, so it works under the `/writing-tracker-homepage/`
+project-site path without additional configuration.
+
 ## Sharing your version
 
 You can publish the static files with any static host. Keep Supabase disabled

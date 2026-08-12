@@ -24,6 +24,29 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Inject optional analytics ID
+        env:
+          PUBLIC_GA_ID: ${{ vars.PUBLIC_GA_ID }}
+        run: |
+          if [ -n "$PUBLIC_GA_ID" ]; then
+            sed -i "s|__PUBLIC_GA_ID__|$PUBLIC_GA_ID|g" js/app-config.js
+            echo "Injected PUBLIC_GA_ID into app config."
+          else
+            sed -i "s|__PUBLIC_GA_ID__||g" js/app-config.js
+            echo "PUBLIC_GA_ID is not set; analytics stays disabled."
+          fi
+
+          if grep -q "__PUBLIC_GA_ID__" js/app-config.js; then
+            echo "Placeholder replacement failed."
+            exit 1
+          fi
+
+          if grep -q 'measurementId: ""' js/app-config.js; then
+            echo "Build check: measurementId is empty in artifact."
+          else
+            echo "Build check: measurementId was populated in artifact."
+          fi
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
 

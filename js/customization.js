@@ -259,7 +259,7 @@
   }
 
   function setManualReloadMessage() {
-    setMessage("Saved. Reload manually after sync finishes.");
+    setMessage("Saved. Refresh the page to see the latest changes.");
   }
 
   function setInputValue(id, value) {
@@ -532,6 +532,10 @@
     if (submit) submit.disabled = true;
     const customization = collectForm();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customization));
+    activeCustomization = customization;
+    window.APP_CONFIG = merge(baseConfig, customization);
+    draft = sanitizeCustomization(window.APP_CONFIG || {}, baseConfig);
+    if (document.getElementById("customize-form")) populateForm();
     suppressRemoteOverrideFor(1500);
     setMessage("Saving settings...");
     const saved = await savePreferences(customization);
@@ -540,7 +544,8 @@
       if (submit) submit.disabled = false;
       return;
     }
-    setManualReloadMessage();
+    closePanel();
+    window.alert("Saved. Please refresh this page to see the latest changes.");
     if (submit) submit.disabled = false;
   }
 
@@ -549,6 +554,10 @@
     const reset = document.getElementById("customize-reset");
     if (reset) reset.disabled = true;
     localStorage.removeItem(STORAGE_KEY);
+    activeCustomization = null;
+    window.APP_CONFIG = clone(baseConfig);
+    draft = sanitizeCustomization(window.APP_CONFIG || {}, baseConfig);
+    if (document.getElementById("customize-form")) populateForm();
     suppressRemoteOverrideFor(1500);
     setMessage("Resetting settings...");
     const saved = await savePreferences(null);
@@ -557,7 +566,8 @@
       if (reset) reset.disabled = false;
       return;
     }
-    setManualReloadMessage();
+    closePanel();
+    window.alert("Reset. Please refresh this page to see the latest changes.");
     if (reset) reset.disabled = false;
   }
 
@@ -571,9 +581,20 @@
     const localValue = readStoredCustomization();
     if (suppressRemoteCustomizationOverride && localValue) return;
     if (sameValue(remoteValue, localValue)) return;
-    if (remoteValue) localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteValue));
-    else localStorage.removeItem(STORAGE_KEY);
-    scheduleReload();
+    if (remoteValue) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteValue));
+      activeCustomization = remoteValue;
+      window.APP_CONFIG = merge(baseConfig, remoteValue);
+      draft = sanitizeCustomization(window.APP_CONFIG || {}, baseConfig);
+      if (document.getElementById("customize-form")) populateForm();
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+      activeCustomization = null;
+      window.APP_CONFIG = clone(baseConfig);
+      draft = sanitizeCustomization(window.APP_CONFIG || {}, baseConfig);
+      if (document.getElementById("customize-form")) populateForm();
+    }
+    updateStorageCopy();
   }
 
   function handleAuthChange(event) {
@@ -585,7 +606,6 @@
     }
     if (signedInDuringPageLoad) {
       localStorage.removeItem(STORAGE_KEY);
-      scheduleReload();
     }
     updateStorageCopy();
   }

@@ -41,6 +41,13 @@ window.APP_CONFIG = {
     reminderInterval: 14
   },
 
+  analytics: {
+    // Optional GA4 measurement ID (example: G-ABC123DEF4).
+    // During GitHub Pages deploy, this placeholder is replaced by vars.PUBLIC_GA_ID.
+    // Leave as-is in git so forks do not inherit your analytics property.
+    measurementId: "__PUBLIC_GA_ID__"
+  },
+
   weather: {
     name: "Provo",
     latitude: 40.2335,

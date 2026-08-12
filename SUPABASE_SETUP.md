@@ -11,6 +11,11 @@ normal sign-in does not require an SMTP provider or an authentication redirect
 URL. It works from GitHub Pages, another static host, or a locally opened
 `file://` copy.
 
+The same `user_state` row stores writing history, habit state, bookmark
+counters, and browser customization. If you already ran the current
+`supabase/user_state.sql`, customization needs no additional schema change; it
+uses the existing bounded `preferences` column.
+
 There are two valid deployment models:
 
 - **One shared project:** the site owner completes this setup once and puts the
@@ -134,12 +139,15 @@ control. Open it to find email, password, Export, and Import together.
 2. On first sign-in, choose whether to import data already stored in that
    browser.
 3. Make a visible change and confirm a row appears in `public.user_state`.
-4. Refresh and confirm the state remains.
-5. Open a private window without signing in and confirm it cannot load the
+4. Open **Customize**, change the title or widget order, and save. Confirm the
+   `preferences` column contains a `customization` object.
+5. Refresh and confirm the state and customization remain.
+6. Open a private window without signing in and confirm it cannot load the
    signed-in user's data.
-6. Create a second test user, save different data, and confirm the accounts do
-   not load each other's state.
-7. Review **Database → Advisors** and the policies on `public.user_state`.
+7. Create a second test user, save different data and customization, and
+   confirm the accounts do not load each other's state.
+8. Sign out and confirm the page returns to its public defaults.
+9. Review **Database → Advisors** and the policies on `public.user_state`.
 
 Later edits are saved locally first and sent to Supabase while signed in. If
 sync is temporarily unavailable, the local copy remains usable.

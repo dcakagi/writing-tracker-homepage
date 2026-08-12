@@ -1,12 +1,49 @@
 # Customization Guide
 
-The homepage is configured in `js/app-config.js`. It is a regular JavaScript
-file so the site can still be opened directly from disk without a build step or
-YAML parser.
+The homepage has two configuration layers:
 
-After making a change, save the file and refresh `index.html` in your browser.
+1. `js/app-config.js` supplies the site's durable defaults.
+2. **Customize** saves a personal override in the current browser. If that user
+   is signed in, the override is also stored under `user_state.preferences` in
+   Supabase.
+
+A browser override wins over the file. Use **Reset to site defaults** in the
+panel to remove it; tracker history is not deleted. This distinction matters
+when you edit `app-config.js` but an older browser customization is still
+active.
+
+## Customize in the browser
+
+Select **Customize** in the page header. The panel can edit:
+
+- Site title and favicon
+- Section and dashboard-widget visibility and order
+- Timer label and date
+- Writing-backup reminder interval
+- Weather location, coordinates, and units
+- Quotes
+- Bookmarks and their order
+
+Select **Save and reload** to apply the changes. With no signed-in account, the
+settings stay only in this browser profile and at this exact page origin. With
+an active Supabase session, they are included in that account's next sync.
+
+The panel does not edit `supabase` or `accessRequest`. Those are deployment
+owner settings and remain in `app-config.js`.
+
+Browser customization is not included in the current writing-history export.
+For durable defaults in a clone or fork, make the same settings in
+`js/app-config.js` and commit that file.
+
+## Customize the source file
+
+`js/app-config.js` is a regular JavaScript file so the site can still be opened
+directly from disk without a build step or YAML parser. After making a change,
+save the file and refresh `index.html` in your browser. If an older browser
+override hides the change, reset the Customize panel.
+
 If a value is invalid or an item name is misspelled, check the browser console
-for an error and compare your configuration with the example below.
+and compare your configuration with the example below.
 
 ## Configuration example
 
@@ -93,8 +130,8 @@ window.APP_CONFIG = {
 };
 ```
 
-The checked-in file is the source of truth if its exact property names differ
-from this overview after the project evolves.
+The checked-in file defines the public defaults if its exact property names
+differ from this overview after the project evolves.
 
 ## Site metadata
 
@@ -248,20 +285,25 @@ loaded.
 
 ## Data, backup, and reset expectations
 
-With sync disabled, tracker data is stored only in the current browser profile.
-It is not written into `js/app-config.js` and is not committed to Git. The
-current export/import controls cover writing history; other widget data stored
-locally is not included in that file.
+With sync disabled or while signed out, tracker data and browser customization
+are stored only in the current browser profile. They are not written into
+`js/app-config.js` and are not committed to Git. The current export/import
+controls cover writing history; other widget data and browser customization are
+not included in that file.
 
 - Use **Export backup** to download a JSON backup of writing history.
 - Use **Import** to restore a previously exported file.
 - Keep a recent export before clearing browsing data or moving computers.
 - Treat exports as private: they can contain your tracker history.
 - Import only a backup you trust. Importing may replace current tracker data.
+- Copy settings into `js/app-config.js` when you need a durable configuration
+  that survives browser-storage loss without Supabase.
 
-Different browsers and browser profiles have separate local storage. Depending
-on browser behavior, opening different copies or URLs of the page can also
-create separate storage contexts.
+Different browsers and browser profiles have separate local storage. Hosted
+origins normally do as well. Local `file://` storage is browser-specific;
+Safari can reuse storage keys across different local HTML files. If you keep
+multiple homepage copies and need strict isolation, use different hosted or
+local HTTP origins instead of assuming each file gets a separate store.
 
 ## Optional Supabase sync
 
@@ -302,7 +344,9 @@ opening the dropdown.
 
 After Supabase is configured, the header pill changes to the Sync/status
 control used by the original homepage. Export and Import move into that
-control's dropdown alongside the sign-in or account controls.
+control's dropdown alongside the sign-in or account controls. Once signed in,
+browser customization is stored inside the existing bounded `preferences`
+object; no additional database migration is required.
 
 If `email` is blank or invalid, the page displays `ownerName` as plain text,
 for example, **Email Your Name to request access**. This is useful when people

@@ -161,7 +161,7 @@
     if (!grid.children.length) {
       const empty = document.createElement("p");
       empty.className = "col-span-full text-center text-sm text-gray-500";
-      empty.textContent = "Add bookmarks in js/app-config.js.";
+      empty.textContent = "Add bookmarks from Customize or js/app-config.js.";
       grid.appendChild(empty);
     }
   }
@@ -179,7 +179,7 @@
     const timerConfig = getConfig().timer || {};
     const startDate = new Date(timerConfig.start);
     if (Number.isNaN(startDate.getTime())) {
-      element.textContent = "Set a timer date in js/app-config.js.";
+      element.textContent = "Set a timer date from Customize or js/app-config.js.";
       return;
     }
 
@@ -209,7 +209,7 @@
 
     const quotes = Array.isArray(getConfig().quotes) ? getConfig().quotes.filter(Boolean) : [];
     if (!quotes.length) {
-      element.textContent = "Add quotes in js/app-config.js.";
+      element.textContent = "Add quotes from Customize or js/app-config.js.";
       return;
     }
 

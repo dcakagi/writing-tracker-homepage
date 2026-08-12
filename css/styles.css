@@ -30,6 +30,97 @@ button {
   transform: none;
 }
 
+#customize-modal button:hover,
+#customize-modal .bg-gray-100:hover {
+  transform: none;
+}
+
+.customize-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: rgb(55 65 81);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.customize-help {
+  display: block;
+  margin-top: 0.3rem;
+  color: rgb(107 114 128);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.customize-field {
+  width: 100%;
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.75rem;
+  background: white;
+  padding: 0.6rem 0.75rem;
+  color: rgb(31 41 55);
+  font-size: 0.875rem;
+}
+
+.customize-field:focus {
+  border-color: rgb(96 165 250);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.customize-order-row {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 0.75rem;
+  background: white;
+  padding: 0.5rem 0.6rem 0.5rem 0.75rem;
+}
+
+.customize-icon-button {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgb(243 244 246);
+  color: rgb(75 85 99);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.customize-icon-button:hover:not(:disabled) {
+  background: rgb(229 231 235);
+}
+
+.customize-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.customize-repeat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgb(229 231 235);
+  background: rgb(249 250 251);
+  padding: 0.75rem;
+}
+
+.customize-bookmark-card {
+  min-width: 0;
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.9rem;
+  background: rgb(249 250 251);
+  padding: 0.8rem;
+}
+
+.customize-panel-content {
+  scrollbar-gutter: stable;
+}
+
 #backup-controls #wt-exportBtn,
 #backup-controls label {
   display: inline-flex;
@@ -144,6 +235,14 @@ button {
 
   .grid.grid-cols-7 {
     gap: 0.25rem;
+  }
+
+  .customize-repeat-row {
+    flex-direction: column;
+  }
+
+  .customize-repeat-row .customize-icon-button {
+    align-self: flex-end;
   }
 }
 

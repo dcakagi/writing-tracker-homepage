@@ -215,8 +215,8 @@
     if (!Number.isFinite(settings.latitude) || !Number.isFinite(settings.longitude)) {
       const weekly = document.getElementById("weekly-weather");
       const hourly = document.getElementById("weather");
-      if (weekly) weekly.textContent = "Add weather coordinates in js/app-config.js.";
-      if (hourly) hourly.textContent = "Add weather coordinates in js/app-config.js.";
+      if (weekly) weekly.textContent = "Add weather coordinates from Customize or js/app-config.js.";
+      if (hourly) hourly.textContent = "Add weather coordinates from Customize or js/app-config.js.";
       return;
     }
 

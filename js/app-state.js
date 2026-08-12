@@ -622,15 +622,17 @@
       clearTimeout(internal.syncTimer);
       internal.syncTimer = null;
     }
-    if (!internal.currentUser || !internal.client) return;
+    if (!internal.currentUser || !internal.client) return true;
 
     setSyncStatus("syncing", "Syncing changes...");
 
     try {
       await writeRemoteState(internal.currentUser, internal.currentState);
       setSyncStatus("synced", "All changes synced.");
+      return true;
     } catch (error) {
       setSyncStatus("not-synced", `Last sync failed: ${error.message || "Unknown error"}`);
+      return false;
     }
   }
 
@@ -809,6 +811,7 @@
     getCurrentUser,
     loadUserState,
     saveUserStatePatch,
+    syncNow,
     signInWithPassword,
     signOut,
     isRemoteSyncActive,

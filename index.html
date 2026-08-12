@@ -20,6 +20,9 @@
     </div>
 
     <div class="flex items-center gap-2">
+      <button id="customize-open" type="button" class="inline-flex min-h-[42px] items-center rounded-full border border-gray-200 bg-white/90 px-4 py-2 text-sm font-medium text-gray-700 shadow-md backdrop-blur-sm hover:border-gray-300 hover:bg-white">
+        Customize
+      </button>
       <div id="app-auth-shell" class="relative hidden">
       <div id="app-auth-trigger" class="relative flex min-h-[42px] items-center gap-2 rounded-full border border-gray-200 bg-white/90 px-2 py-1.5 text-left shadow-md backdrop-blur-sm hover:border-gray-300">
         <button id="app-auth-toggle" type="button" aria-haspopup="dialog" aria-controls="app-auth-card" aria-expanded="false" aria-label="Open sync and backup options" class="absolute inset-0 z-0 rounded-full border-0 bg-transparent p-0 focus-visible:ring-2 focus-visible:ring-blue-500"></button>
@@ -298,6 +301,132 @@
     <div id="bottom-right-gradient-secondary" class="relative left-1/2 ml-28 aspect-[900/620] w-[30rem] rotate-[-25deg] bg-gradient-to-tr opacity-25 sm:ml-72 sm:w-[58rem]" style="clip-path: polygon(18% 8%, 82% 0%, 100% 48%, 74% 100%, 22% 88%, 0% 42%)"></div>
   </div>
 
+  <div id="customize-modal" class="fixed inset-0 z-40 hidden items-center justify-center p-3 sm:p-6" aria-labelledby="customize-heading" role="dialog" aria-modal="true">
+    <button id="customize-backdrop" type="button" class="absolute inset-0 cursor-default bg-slate-900/50" aria-label="Close customization panel"></button>
+    <div class="relative flex max-h-[calc(100vh-1.5rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+      <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 sm:px-6">
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">This browser</div>
+          <h2 id="customize-heading" class="text-xl font-semibold text-gray-800">Customize your homepage</h2>
+          <p id="customize-storage-copy" class="mt-1 text-sm text-gray-500">Your settings are saved only in this browser.</p>
+        </div>
+        <button id="customize-close" type="button" class="rounded-full bg-gray-100 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-200" aria-label="Close customization panel">×</button>
+      </div>
+
+      <form id="customize-form" class="flex min-h-0 flex-1 flex-col">
+        <div class="customize-panel-content min-h-0 flex-1 space-y-8 overflow-y-auto px-5 py-5 sm:px-6">
+          <section>
+            <h3 class="text-base font-semibold text-gray-800">Basics</h3>
+            <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label class="block">
+                <span class="customize-label">Homepage title</span>
+                <input id="customize-title" type="text" maxlength="80" class="customize-field" required>
+              </label>
+              <label class="block">
+                <span class="customize-label">Favicon URL or relative path</span>
+                <input id="customize-favicon" type="text" maxlength="1000" class="customize-field">
+              </label>
+              <label class="block">
+                <span class="customize-label">Timer label</span>
+                <input id="customize-timer-label" type="text" maxlength="100" class="customize-field" required>
+              </label>
+              <label class="block">
+                <span class="customize-label">Timer date and time</span>
+                <input id="customize-timer-start" type="text" maxlength="100" placeholder="2026-01-01T09:00:00-07:00" class="customize-field" required>
+                <span class="customize-help">Use an ISO-style date; include a timezone offset for consistency across devices.</span>
+              </label>
+              <label class="block sm:max-w-xs">
+                <span class="customize-label">Backup reminder (days)</span>
+                <input id="customize-reminder-interval" type="number" min="1" max="365" step="1" class="customize-field" required>
+              </label>
+            </div>
+          </section>
+
+          <section>
+            <h3 class="text-base font-semibold text-gray-800">Layout and visibility</h3>
+            <p class="mt-1 text-sm text-gray-500">Use the arrows to set the order and the checkboxes to show or hide items.</p>
+            <div class="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <div class="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Main sections</div>
+                <div id="customize-section-order" class="space-y-2"></div>
+              </div>
+              <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <div class="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Dashboard widgets</div>
+                <div id="customize-widget-order" class="space-y-2"></div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h3 class="text-base font-semibold text-gray-800">Weather</h3>
+            <p class="mt-1 text-sm text-gray-500">Use city-level coordinates rather than a private street address.</p>
+            <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              <label class="block lg:col-span-2">
+                <span class="customize-label">Location name</span>
+                <input id="customize-weather-name" type="text" maxlength="80" class="customize-field" required>
+              </label>
+              <label class="block">
+                <span class="customize-label">Latitude</span>
+                <input id="customize-weather-latitude" type="number" min="-90" max="90" step="any" class="customize-field" required>
+              </label>
+              <label class="block">
+                <span class="customize-label">Longitude</span>
+                <input id="customize-weather-longitude" type="number" min="-180" max="180" step="any" class="customize-field" required>
+              </label>
+              <div class="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1 lg:grid-cols-1">
+                <label class="block">
+                  <span class="customize-label">Temperature</span>
+                  <select id="customize-temperature-unit" class="customize-field">
+                    <option value="fahrenheit">°F</option>
+                    <option value="celsius">°C</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="customize-label">Wind</span>
+                  <select id="customize-windspeed-unit" class="customize-field">
+                    <option value="mph">mph</option>
+                    <option value="kmh">km/h</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold text-gray-800">Quotes</h3>
+                <p class="mt-1 text-sm text-gray-500">A random visible quote is selected when the page loads.</p>
+              </div>
+              <button id="customize-add-quote" type="button" class="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Add quote</button>
+            </div>
+            <div id="customize-quotes" class="mt-3 space-y-3"></div>
+          </section>
+
+          <section>
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold text-gray-800">Bookmarks</h3>
+                <p class="mt-1 text-sm text-gray-500">URLs saved in Supabase follow your account, so do not add secret or tokenized links.</p>
+              </div>
+              <button id="customize-add-bookmark" type="button" class="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">Add bookmark</button>
+            </div>
+            <div id="customize-bookmarks" class="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2"></div>
+          </section>
+        </div>
+
+        <div class="flex flex-col gap-3 border-t border-gray-200 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div id="customize-message" class="min-h-[1.25rem] text-sm text-gray-500" aria-live="polite"></div>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <button id="customize-reset" type="button" class="rounded-full bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100">Reset to site defaults</button>
+            <button id="customize-cancel" type="button" class="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">Cancel</button>
+            <button id="customize-save" type="submit" class="rounded-full bg-blue-500 px-5 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300">Save and reload</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="wt-editModal" class="fixed inset-0 z-30 hidden items-center justify-center bg-slate-900/45 px-4">
     <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
       <div class="flex items-start justify-between gap-4">
@@ -340,6 +469,7 @@
 
   <!-- Scripts -->
   <script src="js/app-config.js" defer></script>
+  <script src="js/customization.js" defer></script>
   <script src="js/app-state.js" defer></script>
   <script src="js/main.js" defer></script>
   <script src="js/weather.js" defer></script>

@@ -1,143 +1,178 @@
 # Personal Writing Tracker Homepage
 
 A configurable, no-build dashboard for bookmarks, writing progress, habits,
-weather, quotes, and a personal countdown/count-up timer. It works locally by
-default: no account, database, or deployment is required.
+weather, quotes, and a personal countdown/count-up timer.
+
+Try the shared version at
+[bradymoon.com/writing-tracker-homepage](https://bradymoon.com/writing-tracker-homepage/).
 
 ![](assets/screenshot.png)
 
-## Quick start
+## Choose how you want to use it
 
-1. Download or clone this repository.
-2. Open `index.html` in a browser (double-click it or put the full file path in your browser).
-3. Edit `js/app-config.js` to make the page yours, then refresh the browser.
+There are three independent decisions. You do not need to choose a special
+package or follow every setup path.
 
-I recommend setting the file location as your browser homepage. That way you
-see it whenever you open a new browser window or tab. You can alternatively host it somewhere (see section Sharing your version).
+### 1. Where should the page run?
 
-> [!NOTE]  
-> On Safari you are only allowed to set a file as your homepage for new tabs
+- **Use the shared website:** open the link above. Nothing needs to be
+  installed, and browser customization is available immediately.
+- **Run your own local copy:** download or clone the repository and open
+  `index.html`. This works from a normal `file://` address with no build step.
+- **Host your own copy:** fork the repository and enable its included GitHub
+  Pages workflow. Your fork becomes a separately managed website.
 
-Your tracker data is saved in that browser's local storage. The page does not
-need Supabase unless you choose to enable cloud sync.
+### 2. How should it be customized?
 
-> [!IMPORTANT]
-> Local storage is not a durable backup. Clearing site data, changing browsers,
-> switching devices, or some browser cleanup tools can remove it. Use **Export
-> backup** regularly for your writing history, and keep the downloaded JSON file
-> somewhere safe. Use **Import** to restore it. Other locally stored widget data
-> is not currently included in that export.
+- **In the browser:** select **Customize**. This is the easiest way to change
+  the title, timer, weather, visible sections, ordering, quotes, and bookmarks.
+  These choices apply only to you; they do not alter the public repository.
+- **In the files:** edit `js/app-config.js`. This is best for a local clone or
+  fork when you want durable defaults that are committed and shared with every
+  visitor to your copy.
 
-## Customize it
+A browser customization overrides `app-config.js` in that browser. Select
+**Reset to site defaults** in the panel to see later file changes again.
 
-Most changes belong in `js/app-config.js`. It controls:
+### 3. Where should personal data be stored?
 
-- Site title and favicon
-- The order of the main sections
-- The order of widgets in the dashboard group
-- Which features are visible
-- Timer text and date
-- Writing backup reminder interval
-- Weather location and units
-- Quotes
-- Bookmarks
-- Optional Supabase settings
-
-See [CUSTOMIZATION.md](CUSTOMIZATION.md) for the complete configuration guide
-and examples.
-
-## Optional cloud sync
-
-Local-only mode is the default and is the right choice for most people. If you
-want your tracker data to follow you across browsers or devices, you have two
-options:
-
-- Click the background of the **Export / Import** pill to open the optional
-  sync information, email the named owner, and wait for them to approve and add
-  your address. The
-  owner may intentionally list only a name, so you may need to use contact
-  information you already have.
-- Create a Supabase project you control and follow
+- **This browser:** the default. No account is required. Tracker data and
+  browser customization stay in this browser profile.
+- **Approved shared Supabase:** request an account from the owner, then sign in
+  on the shared page. Tracker data and browser customization sync to that
+  account.
+- **Your own Supabase:** create a project you control, apply the included SQL,
+  and point your local copy or fork to it. Follow
   [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
-Use only a Supabase project you control or a shared project whose owner has
-explicitly approved you. Never put a Supabase secret or service-role key in
-frontend code.
+Hosting and storage are separate choices. For example, a local `file://` copy
+can still use Supabase, and a GitHub Pages copy can remain entirely local in
+each visitor's browser.
 
-Owners who offer shared sync must keep public signup disabled, review requests,
-create approved Auth users manually, and monitor usage. `accessRequest.ownerName` can
-show a name without publishing an address; setting `accessRequest.email` adds a
-clickable mail link and makes that address visible in the page source.
+## Common starting points
 
-Shared sync uses owner-created email/password accounts, so normal sign-in works
-without SMTP or redirect URLs. The owner must assign unique strong passwords
-and handle password recovery manually unless email delivery is added later.
+### Use the shared site without an account
 
-When Supabase is not configured, the header stays focused on **Export** and
-**Import**. Once it is configured, that pill becomes the Sync/status control;
-Export and Import remain available inside its dropdown.
+1. Open the [shared homepage](https://bradymoon.com/writing-tracker-homepage/).
+2. Select **Customize**, make your changes, and select **Save and reload**.
+3. Keep using local browser storage. Export writing history regularly.
+
+### Pull it locally
+
+1. Download the repository as a ZIP, or clone it:
+
+   ```sh
+   git clone https://github.com/bradygm/writing-tracker-homepage.git
+   cd writing-tracker-homepage
+   ```
+
+2. Open `index.html` in a browser.
+3. Use **Customize** for browser-specific settings, or edit
+   `js/app-config.js` for durable defaults.
+4. Keep data locally, sign in with an approved shared account, or configure a
+   Supabase project you control.
+
+You can set the local file as your browser homepage. Safari permits a local
+file as the homepage for new windows, but its new-tab behavior is more limited.
+
+### Fork and host it yourself
+
+1. Fork the repository on GitHub.
+2. Review `js/app-config.js`. Disable or replace the included Supabase project
+   before presenting the fork as your own service.
+3. Open **Settings → Pages** in the fork.
+4. Under **Build and deployment → Source**, choose **GitHub Actions**.
+5. Push to `main` and watch **Deploy GitHub Pages** in the Actions tab.
+
+The project uses relative paths and needs no build command. Each later push to
+`main` redeploys the site automatically.
+
+## Browser customization options
+
+The **Customize** panel currently supports:
+
+- Homepage title and favicon
+- Countdown/count-up timer label and date
+- Writing-backup reminder interval
+- Main-section visibility and order
+- Dashboard-widget visibility and order
+- Weather location, coordinates, and units
+- Quotes
+- Bookmarks, their order, icons, stable IDs, and new-tab behavior
+
+Deployment-owner settings are intentionally excluded. Supabase project values
+and access-request contact details remain in `js/app-config.js` so a visitor
+cannot accidentally replace the site's connection configuration.
+
+See [CUSTOMIZATION.md](CUSTOMIZATION.md) for exact behavior and the complete
+file-based configuration reference.
+
+## Local data and backups
+
+Local storage is convenient but not a durable backup. Clearing site data,
+changing browsers or profiles, switching between the hosted and `file://`
+versions, or some cleanup tools can remove it.
+
+The current **Export** and **Import** controls cover writing history. They do
+not yet include habit data, bookmark counters, or browser customization. Keep a
+recent writing export somewhere safe. A durable browser customization should
+also be copied into `js/app-config.js` in a clone or fork.
+
+Hosted origins normally have separate browser storage. `file://` storage is
+browser-specific, however, and Safari can reuse the same storage keys across
+different local HTML files. If you keep multiple homepage copies and need them
+isolated, host them at different HTTPS origins or serve them from distinct local
+HTTP origins. Customizing the shared website does not automatically customize a
+local clone unless you sign in and use the same Supabase account.
+
+## Optional shared cloud sync
+
+The shared deployment supports manually approved email/password accounts. Open
+the backup/sync pill for request instructions.
+
+An access request does not create an account. The owner reviews it and creates
+a confirmed Supabase Auth user manually. 
+
+When signed in, writing history, habit state, bookmark counters, and browser
+customization are stored in the account's protected `user_state` row. Signing
+out clears that account's synced state from the current browser and returns the
+page to its public defaults.
 
 ## Privacy and security
 
-- Configuration in `js/app-config.js` is public to anyone who can view the
-  deployed page or repository. Do not put passwords, access tokens, private
-  document links, or other secrets there.
-- In local-only mode, tracker data stays in the current browser's local storage.
-- The page still loads third-party browser resources and weather data over the
-  internet. Those services can receive ordinary request information such as
-  your IP address.
-- Supabase sync is opt-in. Its security depends on correctly configuring Auth
-  and row-level security using the supplied setup guide and SQL migration.
-- Only use a public/publishable Supabase key in the browser. Secret and
-  service-role keys belong on a trusted server and are not needed by this
-  template.
+- Everything committed to `js/app-config.js` is public in a public repository
+  or deployment. Do not add passwords, tokens, private document links, signed
+  URLs, or service-role keys.
+- Browser customizations are private to the browser unless cloud sync is active.
+  Synced bookmarks and quotes are then stored in that user's Supabase row.
+- A Supabase project URL and publishable key are safe to expose in frontend
+  code. Database protection comes from authentication, grants, and row-level
+  security. Secret and service-role keys must never be added to the page.
+- The page loads fonts, JavaScript libraries, bookmark icons, and weather data
+  from third parties. Those services receive ordinary request information such
+  as an IP address.
+- The shared site redirects HTTP to HTTPS through Cloudflare. A self-hosted fork
+  should also enforce HTTPS before enabling password sign-in.
 
-Before publishing your customized version, search the repository for private
-names, email addresses, URLs, coordinates, credentials, and identifiers.
+Before publishing a fork, search the whole repository for private names, email
+addresses, URLs, coordinates, credentials, and identifiers.
 
 ## Project structure
 
 ```text
 .
-├── index.html             # Page structure
-├── css/
-│   └── styles.css         # Page styling
+├── index.html                 # Page structure and customization dialog
+├── css/styles.css             # Page and responsive styling
 ├── js/
-│   ├── app-config.js      # Your main configuration file
-│   └── ...                # Widgets, storage, and page behavior
-├── supabase/
-│   └── user_state.sql     # Optional cloud-sync database setup
-├── CUSTOMIZATION.md       # Configuration reference
-└── SUPABASE_SETUP.md      # Optional Supabase walkthrough
+│   ├── app-config.js          # Durable site defaults and owner settings
+│   ├── customization.js       # Browser customization and preference sync
+│   └── ...                    # Widgets, storage, and page behavior
+├── supabase/user_state.sql    # Optional cloud-sync schema and RLS
+├── CUSTOMIZATION.md           # Browser and file configuration reference
+├── SUPABASE_SETUP.md          # Bring-your-own-Supabase walkthrough
+└── IMPLEMENTATION_PLAN.md     # Scope, decisions, and remaining validation
 ```
-
-## Host it with GitHub Pages
-
-This repository includes a no-build GitHub Pages workflow. For this repository,
-the project-site URL would follow the same pattern as the following:
-
-`https://bradygm.github.io/writing-tracker-homepage/`
-
-To enable it once:
-
-1. Push the repository to GitHub.
-2. Open **Settings → Pages** in the GitHub repository.
-3. Under **Build and deployment → Source**, choose **GitHub Actions**.
-4. Open the **Actions** tab and watch **Deploy GitHub Pages** complete.
-5. Open the URL shown by the completed deployment.
-
-Every later push to `main` redeploys the site automatically. The project uses
-relative asset paths, so it works under the `/writing-tracker-homepage/`
-project-site path without additional configuration.
-
-## Sharing your version
-
-You can publish the static files with any static host. Keep Supabase disabled
-unless you have configured your own project. Before committing, review
-`js/app-config.js` and replace anything you would not want visible in a public
-repository.
 
 ## Feature requests and issues
 
-Feel free to open pull requests for changes or upgrades you have made. If you come across an issue,
-you can also submit it as a Github issue. Feel free to also request features or share ideas with me!
+Pull requests, issues, feature requests, and ideas are welcome.

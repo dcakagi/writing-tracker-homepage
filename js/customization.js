@@ -209,6 +209,21 @@
     }
   }
 
+  function setImportedCustomization(value) {
+    if (!isPlainObject(value)) {
+      localStorage.removeItem(STORAGE_KEY);
+      activeCustomization = null;
+      window.APP_CONFIG = clone(baseConfig);
+      return null;
+    }
+
+    const sanitized = sanitizeCustomization(value, baseConfig);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+    activeCustomization = sanitized;
+    window.APP_CONFIG = merge(baseConfig, sanitized);
+    return clone(sanitized);
+  }
+
   function sameValue(left, right) {
     return JSON.stringify(left || null) === JSON.stringify(right || null);
   }
@@ -609,6 +624,7 @@
   window.HomepageCustomization = {
     baseConfig: clone(baseConfig),
     getActive: () => activeCustomization ? clone(activeCustomization) : null,
+    setImported: setImportedCustomization,
     sanitize: (value) => sanitizeCustomization(value, baseConfig),
     storageKey: STORAGE_KEY
   };

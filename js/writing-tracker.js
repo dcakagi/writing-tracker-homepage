@@ -22,6 +22,9 @@ const WT_CONFIG = {
   reminderInterval: wtGetReminderIntervalMs()
 };
 
+const WT_BACKUP_FORMAT = 'writing-tracker-homepage';
+const WT_BACKUP_VERSION = 1;
+
 // State Variables
 let wtData = {};
 let wtCalYear = (new Date()).getFullYear();
@@ -106,14 +109,18 @@ function wtLoadData() {
 function wtSaveData(data) {
   const homepageState = window.HomepageState;
   try {
+    let saveResult;
     if (homepageState && typeof homepageState.saveUserStatePatch === 'function') {
-      homepageState.saveUserStatePatch({ writing_data: data });
+      saveResult = homepageState.saveUserStatePatch({ writing_data: data });
     } else {
       localStorage.setItem(WT_CONFIG.storageKey, JSON.stringify(data));
+      saveResult = Promise.resolve();
     }
     wtStatsCache.isDirty = true; // Invalidate cache when data changes
+    return saveResult;
   } catch (error) {
     console.error('Error saving writing data:', error);
+    return Promise.resolve(false);
   }
 }
 
@@ -216,7 +223,7 @@ function wtShowExportReminder(lastExport, now) {
   wtExportBtn.textContent = "Export (backup!)";
 
   if (!lastExport) {
-    wtImportMsg.textContent = "💾 Backup your data!";
+    wtImportMsg.textContent = "💾 Back up your dashboard!";
   } else {
     const daysSince = Math.floor((now - new Date(lastExport)) / (24 * 60 * 60 * 1000));
     wtImportMsg.textContent = `💾 Last backup: ${daysSince} days ago`;
@@ -229,10 +236,10 @@ function wtResetExportReminder() {
   wtExportBtn.className = "bg-gray-500 text-white px-3 py-2 rounded-full text-xs font-medium hover:bg-gray-600 transition-colors";
   wtExportBtn.textContent = "Export";
 
-  wtImportMsg.textContent = "✅ Data backed up!";
+  wtImportMsg.textContent = "✅ Dashboard backed up!";
   wtImportMsg.className = "text-green-600 text-xs ml-2";
   setTimeout(() => {
-    if (wtImportMsg.textContent === "✅ Data backed up!") {
+    if (wtImportMsg.textContent === "✅ Dashboard backed up!") {
       wtImportMsg.textContent = "";
     }
   }, 3000);
@@ -1095,13 +1102,32 @@ function wtRenderMostProductiveWeekday() {
 /* ===========================
    Export/Import Functions
    =========================== */
+function wtBuildBackup(state) {
+  return {
+    format: WT_BACKUP_FORMAT,
+    version: WT_BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    data: state
+  };
+}
+
 function wtExportData() {
-  const dataStr = JSON.stringify(wtData, null, 2);
+  const homepageState = window.HomepageState;
+  const state = homepageState && typeof homepageState.loadUserState === 'function'
+    ? homepageState.loadUserState()
+    : {
+        writing_data: wtData,
+        habit_data: {},
+        bookmark_counts: {},
+        preferences: {}
+      };
+  const backup = wtBuildBackup(state);
+  const dataStr = JSON.stringify(backup, null, 2);
   const blob = new Blob([dataStr], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'writing-tracker-data.json';
+  a.download = `homepage-backup-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1110,26 +1136,105 @@ function wtExportData() {
   wtResetExportReminder();
 }
 
+function wtIsPlainObject(value) {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function wtIsFullBackup(value) {
+  return wtIsPlainObject(value) &&
+    value.format === WT_BACKUP_FORMAT &&
+    value.version === WT_BACKUP_VERSION &&
+    wtIsPlainObject(value.data);
+}
+
+function wtIsLegacyWritingBackup(value) {
+  if (!wtIsPlainObject(value) || Object.prototype.hasOwnProperty.call(value, 'format')) return false;
+  return Object.keys(value).every((key) => /^\d{4}-\d{2}-\d{2}$/.test(key));
+}
+
+async function wtImportFullBackup(backup) {
+  const homepageState = window.HomepageState;
+  if (!homepageState || typeof homepageState.saveUserStatePatch !== 'function') {
+    throw new Error('Homepage state is unavailable.');
+  }
+
+  const shouldImport = window.confirm(
+    'Import this homepage backup?\n\nThis replaces writing history, habit data, bookmark counts, and browser customization.' +
+    (homepageState.isRemoteSyncActive() ? '\n\nBecause you are signed in, the imported copy will also replace your synced data.' : '')
+  );
+  if (!shouldImport) return false;
+
+  const rawState = backup.data;
+  const rawPreferences = wtIsPlainObject(rawState.preferences) ? rawState.preferences : {};
+  const customizationApi = window.HomepageCustomization;
+  const importedCustomization = customizationApi && typeof customizationApi.setImported === 'function'
+    ? customizationApi.setImported(rawPreferences.customization)
+    : null;
+  const preferences = importedCustomization ? { customization: importedCustomization } : {};
+
+  await homepageState.saveUserStatePatch({
+    writing_data: wtIsPlainObject(rawState.writing_data) ? rawState.writing_data : {},
+    habit_data: wtIsPlainObject(rawState.habit_data) ? rawState.habit_data : {},
+    bookmark_counts: wtIsPlainObject(rawState.bookmark_counts) ? rawState.bookmark_counts : {},
+    preferences
+  });
+
+  if (homepageState.isRemoteSyncActive() && typeof homepageState.syncNow === 'function') {
+    const synced = await homepageState.syncNow();
+    if (!synced) {
+      wtImportMsg.textContent = 'Imported in this browser, but cloud sync failed. Try again when connected.';
+      wtImportMsg.className = 'text-amber-600 text-xs';
+      return false;
+    }
+  }
+
+  wtData = homepageState.loadUserState().writing_data || {};
+  wtInvalidateCache();
+  wtRenderAll();
+  wtImportMsg.textContent = 'Full backup imported. Reloading...';
+  wtImportMsg.className = 'text-green-600 text-xs';
+  window.setTimeout(() => window.location.reload(), 350);
+  return true;
+}
+
+async function wtImportLegacyWritingBackup(imported) {
+  const shouldImport = window.confirm(
+    'Import this older writing-only backup?\n\nThis replaces writing history but keeps habit data, bookmarks, and customization.'
+  );
+  if (!shouldImport) return false;
+
+  wtData = imported;
+  wtInvalidateCache();
+  await wtSaveData(wtData);
+  wtData = wtLoadData();
+  wtRenderAll();
+  wtImportMsg.textContent = 'Writing backup imported.';
+  wtImportMsg.className = 'text-green-600 text-xs';
+  window.setTimeout(() => { wtImportMsg.textContent = ''; }, 2500);
+  return true;
+}
+
 function wtImportData(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(evt) {
+  reader.onload = async function(evt) {
     try {
       const imported = JSON.parse(evt.target.result);
-      if (typeof imported === 'object' && imported !== null) {
-        wtData = imported;
-        wtInvalidateCache();
-        wtSaveData(wtData);
-        wtRenderAll();
-        wtImportMsg.textContent = 'Import successful!';
-        setTimeout(() => { wtImportMsg.textContent = ''; }, 2000);
+      if (wtIsFullBackup(imported)) {
+        await wtImportFullBackup(imported);
+      } else if (wtIsLegacyWritingBackup(imported)) {
+        await wtImportLegacyWritingBackup(imported);
       } else {
-        wtImportMsg.textContent = 'Invalid file.';
+        wtImportMsg.textContent = 'This is not a recognized homepage backup.';
+        wtImportMsg.className = 'text-amber-600 text-xs';
       }
-    } catch {
+    } catch (error) {
       wtImportMsg.textContent = 'Error reading file.';
+      wtImportMsg.className = 'text-amber-600 text-xs';
+    } finally {
+      event.target.value = '';
     }
   };
   reader.readAsText(file);

@@ -19,7 +19,7 @@ Select **Customize** in the page header. The panel can edit:
 - Site title and favicon
 - Section and dashboard-widget visibility and order
 - Timer label and date
-- Writing-backup reminder interval
+- Dashboard-backup reminder interval
 - Weather location, coordinates, and units
 - Quotes
 - Bookmarks and their order
@@ -31,8 +31,8 @@ an active Supabase session, they are included in that account's next sync.
 The panel does not edit `supabase` or `accessRequest`. Those are deployment
 owner settings and remain in `app-config.js`.
 
-Browser customization is not included in the current writing-history export.
-For durable defaults in a clone or fork, make the same settings in
+Browser customization is included in the full dashboard backup. For public or
+shared durable defaults in a clone or fork, make the same settings in
 `js/app-config.js` and commit that file.
 
 ## Customize the source file
@@ -208,8 +208,8 @@ local timezone.
 
 ## Choose the backup reminder interval
 
-`writing.reminderInterval` is the number of days between local writing-data
-backup reminders:
+`writing.reminderInterval` is the number of days between local dashboard-backup
+reminders. The property keeps its original `writing` location for compatibility:
 
 ```js
 writing: {
@@ -287,17 +287,22 @@ loaded.
 
 With sync disabled or while signed out, tracker data and browser customization
 are stored only in the current browser profile. They are not written into
-`js/app-config.js` and are not committed to Git. The current export/import
-controls cover writing history; other widget data and browser customization are
-not included in that file.
+`js/app-config.js` and are not committed to Git.
 
-- Use **Export backup** to download a JSON backup of writing history.
-- Use **Import** to restore a previously exported file.
+- Use **Export** to download a versioned JSON backup of writing history, habit
+  data, bookmark counters, and browser customization.
+- Use **Import** to replace those saved areas from a full backup. The page asks
+  for confirmation first and reloads after a successful import.
+- Older writing-only exports remain supported and replace only writing history.
 - Keep a recent export before clearing browsing data or moving computers.
-- Treat exports as private: they can contain your tracker history.
+- Treat exports as private: they can contain tracker history, quotes, and
+  bookmark URLs.
 - Import only a backup you trust. Importing may replace current tracker data.
 - Copy settings into `js/app-config.js` when you need a durable configuration
-  that survives browser-storage loss without Supabase.
+  shared as the default for every visitor to a clone or fork.
+
+Backups do not include passwords, Auth sessions, deployment-owner Supabase or
+access-request settings, or a writing timer that is actively running.
 
 Different browsers and browser profiles have separate local storage. Hosted
 origins normally do as well. Local `file://` storage is browser-specific;

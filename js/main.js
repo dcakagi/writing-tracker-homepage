@@ -103,7 +103,7 @@
         getFeature(sectionId, true)
       );
     });
-    setElementEnabled(document.getElementById("backup-controls"), getFeature("writing", true));
+    setElementEnabled(document.getElementById("backup-controls"), true);
 
     const widgetFeatures = {
       timer: "timer",
@@ -328,7 +328,7 @@
     ) {
       window.initializeWeather();
     }
-    if (getFeature("writing", true) && window.initializeWritingTracker) {
+    if (window.initializeWritingTracker) {
       await window.initializeWritingTracker();
     }
     if (dashboardEnabled && getFeature("habit", true) && window.initializeHabitTracker) {

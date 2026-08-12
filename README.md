@@ -55,7 +55,7 @@ each visitor's browser.
 
 1. Open the [shared homepage](https://bradymoon.com/writing-tracker-homepage/).
 2. Select **Customize**, make your changes, and select **Save and reload**.
-3. Keep using local browser storage. Export writing history regularly.
+3. Keep using local browser storage. Export a dashboard backup regularly.
 
 ### Pull it locally
 
@@ -93,7 +93,7 @@ The **Customize** panel currently supports:
 
 - Homepage title and favicon
 - Countdown/count-up timer label and date
-- Writing-backup reminder interval
+- Dashboard-backup reminder interval
 - Main-section visibility and order
 - Dashboard-widget visibility and order
 - Weather location, coordinates, and units
@@ -113,10 +113,15 @@ Local storage is convenient but not a durable backup. Clearing site data,
 changing browsers or profiles, switching between the hosted and `file://`
 versions, or some cleanup tools can remove it.
 
-The current **Export** and **Import** controls cover writing history. They do
-not yet include habit data, bookmark counters, or browser customization. Keep a
-recent writing export somewhere safe. A durable browser customization should
-also be copied into `js/app-config.js` in a clone or fork.
+The **Export** control downloads one versioned JSON backup containing writing
+history, habit data, bookmark counters, and browser customization. **Import**
+restores those areas after asking for confirmation. Older writing-only exports
+remain supported and replace only writing history.
+
+Backups intentionally exclude passwords, Supabase connection/owner settings,
+the current Auth session, and a writing timer that is actively running. Keep a
+recent backup somewhere safe; it can contain private tracker data, quotes, and
+bookmark URLs.
 
 Hosted origins normally have separate browser storage. `file://` storage is
 browser-specific, however, and Safari can reuse the same storage keys across
@@ -143,8 +148,9 @@ page to its public defaults.
 - Everything committed to `js/app-config.js` is public in a public repository
   or deployment. Do not add passwords, tokens, private document links, signed
   URLs, or service-role keys.
-- Browser customizations are private to the browser unless cloud sync is active.
-  Synced bookmarks and quotes are then stored in that user's Supabase row.
+- Browser customizations are private to the browser unless cloud sync is active
+  or the user deliberately exports a backup. Synced bookmarks and quotes are
+  stored in that user's Supabase row.
 - A Supabase project URL and publishable key are safe to expose in frontend
   code. Database protection comes from authentication, grants, and row-level
   security. Secret and service-role keys must never be added to the page.

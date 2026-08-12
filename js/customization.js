@@ -236,6 +236,14 @@
   let draft = sanitizeCustomization(window.APP_CONFIG || {}, baseConfig);
   let signedInDuringPageLoad = false;
   let reloadScheduled = false;
+  let suppressRemoteCustomizationOverride = false;
+
+  function suppressRemoteOverrideFor(ms) {
+    suppressRemoteCustomizationOverride = true;
+    window.setTimeout(() => {
+      suppressRemoteCustomizationOverride = false;
+    }, ms);
+  }
 
   function setMessage(message, tone) {
     const element = document.getElementById("customize-message");
@@ -520,6 +528,7 @@
     if (submit) submit.disabled = true;
     const customization = collectForm();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customization));
+    suppressRemoteOverrideFor(1500);
     setMessage("Saving settings...");
     const saved = await savePreferences(customization);
     if (!saved) {
@@ -536,6 +545,7 @@
     const reset = document.getElementById("customize-reset");
     if (reset) reset.disabled = true;
     localStorage.removeItem(STORAGE_KEY);
+    suppressRemoteOverrideFor(1500);
     setMessage("Resetting settings...");
     const saved = await savePreferences(null);
     if (!saved) {
@@ -554,6 +564,7 @@
       ? sanitizeCustomization(preferences[PREFERENCE_KEY], baseConfig)
       : null;
     const localValue = readStoredCustomization();
+    if (suppressRemoteCustomizationOverride && localValue) return;
     if (sameValue(remoteValue, localValue)) return;
     if (remoteValue) localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteValue));
     else localStorage.removeItem(STORAGE_KEY);

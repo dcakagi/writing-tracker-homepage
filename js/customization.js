@@ -258,6 +258,10 @@
     window.setTimeout(() => window.location.reload(), 50);
   }
 
+  function setManualReloadMessage() {
+    setMessage("Saved. Reload manually after sync finishes.");
+  }
+
   function setInputValue(id, value) {
     const element = document.getElementById(id);
     if (element) element.value = value == null ? "" : String(value);
@@ -536,8 +540,8 @@
       if (submit) submit.disabled = false;
       return;
     }
-    setMessage("Saved. Reloading the homepage...");
-    scheduleReload();
+    setManualReloadMessage();
+    if (submit) submit.disabled = false;
   }
 
   async function handleReset() {
@@ -553,7 +557,8 @@
       if (reset) reset.disabled = false;
       return;
     }
-    scheduleReload();
+    setManualReloadMessage();
+    if (reset) reset.disabled = false;
   }
 
   function applyRemotePreferences(event) {

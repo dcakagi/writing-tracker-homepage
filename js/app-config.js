@@ -134,8 +134,8 @@ window.APP_CONFIG = {
   // Optional cloud sync. Leave disabled for a completely local homepage.
   // Use your own Supabase project; see SUPABASE_SETUP.md.
   supabase: {
-    enabled: false,
-    url: "",
-    publishableKey: ""
+    enabled: true,
+    url: "https://yvobzyvedhwhigkrmlnx.supabase.co",
+    publishableKey: "sb_publishable_vizibOA97baQj6WQISDazg_SofhiPPK"
   }
 };

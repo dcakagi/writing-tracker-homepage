@@ -54,7 +54,7 @@
           <button id="app-auth-close" type="button" class="rounded-full bg-gray-100 px-2.5 py-1 text-sm text-gray-500 hover:bg-gray-200">x</button>
         </div>
         <p id="app-auth-copy" class="mt-3 text-sm text-gray-600">
-          Sign in with a one-time code to sync your data securely across browsers.
+          Sign in with the account provided by the site owner to sync securely across browsers.
         </p>
         <div class="mt-3 rounded-xl bg-gray-50 px-4 py-3">
           <div id="app-sync-status" class="text-sm text-gray-500">Checking sync status...</div>
@@ -65,36 +65,20 @@
               id="app-auth-email-input"
               type="email"
               placeholder="you@example.com"
+              autocomplete="username"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              id="app-auth-password-input"
+              type="password"
+              placeholder="Password"
+              autocomplete="current-password"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button id="app-auth-submit" type="submit" class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 transition-colors">
-              Email code
+              Sign in
             </button>
           </form>
-          <div id="app-auth-verify" class="hidden rounded-xl bg-gray-50 px-4 py-3">
-            <div id="app-auth-otp-copy" class="text-sm text-gray-600"></div>
-            <form id="app-auth-verify-form" class="mt-3 flex flex-col gap-3" autocomplete="one-time-code">
-              <input
-                id="app-auth-otp-input"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                maxlength="6"
-                placeholder="123456"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm tracking-[0.35em] text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button id="app-auth-verify-btn" type="submit" class="rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition-colors">
-                Verify code
-              </button>
-            </form>
-            <div class="mt-3 flex flex-wrap gap-2">
-              <button id="app-auth-resend-btn" type="button" class="rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-                Resend code
-              </button>
-              <button id="app-auth-change-email-btn" type="button" class="rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-                Change email
-              </button>
-            </div>
-          </div>
         </div>
         <div id="app-auth-signed-in" class="mt-4 hidden rounded-xl bg-gray-50 px-4 py-3">
           <div class="text-sm text-gray-600">Signed in as</div>
@@ -109,7 +93,7 @@
           <div class="mt-2 flex flex-col gap-2 text-sm">
             <div id="app-access-request-group" class="hidden">
               <a id="app-access-request-link" class="hidden font-medium text-blue-600 hover:text-blue-700 hover:underline">Request access by email</a>
-              <span id="app-access-request-unconfigured" class="hidden text-gray-600">Ask the person who shared this page to invite you.</span>
+              <span id="app-access-request-unconfigured" class="hidden text-gray-600">Ask the person who shared this page to add your email.</span>
             </div>
             <a href="SUPABASE_SETUP.md" target="_blank" rel="noreferrer" class="font-medium text-gray-700 hover:text-gray-900 hover:underline">
               Set up your own Supabase project

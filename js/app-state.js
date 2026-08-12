@@ -21,10 +21,8 @@
     syncStatus: "local-only",
     syncMessage: "Local-only mode",
     syncTimer: null,
-    isSendingLink: false,
-    isVerifyingOtp: false,
+    isSigningIn: false,
     loadingUserId: null,
-    pendingOtpEmail: "",
     ui: {}
   };
 
@@ -297,8 +295,8 @@
     internal.ui.triggerLabel = document.getElementById("app-auth-trigger-label");
     internal.ui.close = document.getElementById("app-auth-close");
     internal.ui.requestForm = document.getElementById("app-auth-request-form");
-    internal.ui.verifyForm = document.getElementById("app-auth-verify-form");
     internal.ui.emailInput = document.getElementById("app-auth-email-input");
+    internal.ui.passwordInput = document.getElementById("app-auth-password-input");
     internal.ui.submit = document.getElementById("app-auth-submit");
     internal.ui.signOut = document.getElementById("app-signout-btn");
     internal.ui.signedOut = document.getElementById("app-auth-signed-out");
@@ -309,12 +307,6 @@
     internal.ui.statusPill = document.getElementById("app-auth-pill");
     internal.ui.copy = document.getElementById("app-auth-copy");
     internal.ui.sync = document.getElementById("app-sync-status");
-    internal.ui.verifyPanel = document.getElementById("app-auth-verify");
-    internal.ui.otpCopy = document.getElementById("app-auth-otp-copy");
-    internal.ui.otpInput = document.getElementById("app-auth-otp-input");
-    internal.ui.verifyButton = document.getElementById("app-auth-verify-btn");
-    internal.ui.resendButton = document.getElementById("app-auth-resend-btn");
-    internal.ui.changeEmailButton = document.getElementById("app-auth-change-email-btn");
     internal.ui.syncOptions = document.getElementById("app-sync-options");
     internal.ui.accessRequestGroup = document.getElementById("app-access-request-group");
     internal.ui.accessRequestLink = document.getElementById("app-access-request-link");
@@ -359,24 +351,12 @@
       internal.ui.requestForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const email = internal.ui.emailInput ? internal.ui.emailInput.value.trim() : "";
-        if (!email) {
-          setInlineMessage("Enter your email to receive a one-time code.", "text-amber-600");
+        const password = internal.ui.passwordInput ? internal.ui.passwordInput.value : "";
+        if (!email || !password) {
+          setInlineMessage("Enter your email and password.", "text-amber-600");
           return;
         }
-        await sendEmailOtp(email);
-      });
-    }
-
-    if (internal.ui.verifyForm && !internal.ui.verifyForm.dataset.bound) {
-      internal.ui.verifyForm.dataset.bound = "true";
-      internal.ui.verifyForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const token = internal.ui.otpInput ? internal.ui.otpInput.value.trim() : "";
-        if (!token) {
-          setInlineMessage("Enter the 6-digit code from your email.", "text-amber-600");
-          return;
-        }
-        await verifyEmailOtp(token);
+        await signInWithPassword(email, password);
       });
     }
 
@@ -387,24 +367,6 @@
       });
     }
 
-    if (internal.ui.resendButton && !internal.ui.resendButton.dataset.bound) {
-      internal.ui.resendButton.dataset.bound = "true";
-      internal.ui.resendButton.addEventListener("click", async () => {
-        if (!internal.pendingOtpEmail) return;
-        await sendEmailOtp(internal.pendingOtpEmail);
-      });
-    }
-
-    if (internal.ui.changeEmailButton && !internal.ui.changeEmailButton.dataset.bound) {
-      internal.ui.changeEmailButton.dataset.bound = "true";
-      internal.ui.changeEmailButton.addEventListener("click", () => {
-        internal.pendingOtpEmail = "";
-        if (internal.ui.otpInput) internal.ui.otpInput.value = "";
-        renderAuthUi();
-        setInlineMessage("", "text-gray-500");
-        if (internal.ui.emailInput) internal.ui.emailInput.focus();
-      });
-    }
   }
 
   function setInlineMessage(message, colorClass) {
@@ -421,8 +383,7 @@
     if (!internal.ui.root) return;
 
     const isSignedIn = Boolean(internal.currentUser);
-    const isAwaitingOtp = Boolean(internal.pendingOtpEmail) && !isSignedIn;
-    const signedOutCopy = "Sign in with a one-time code to sync your data securely across browsers.";
+    const signedOutCopy = "Sign in with the email and password provided by the site owner to sync securely across browsers.";
 
     const backupDestination = isConfigured ? internal.ui.backupSlot : internal.ui.trigger;
     if (
@@ -445,8 +406,6 @@
         ? (internal.currentUser.email || "Signed in")
         : !isConfigured
         ? "Sync options"
-        : isAwaitingOtp
-        ? "Code sent"
         : "Sign in";
     }
 
@@ -471,38 +430,13 @@
     }
 
     if (internal.ui.submit) {
-      internal.ui.submit.disabled = internal.isSendingLink;
-      internal.ui.submit.textContent = internal.isSendingLink ? "Sending..." : "Email code";
+      internal.ui.submit.disabled = internal.isSigningIn;
+      internal.ui.submit.textContent = internal.isSigningIn ? "Signing in..." : "Sign in";
       internal.ui.submit.className = internal.ui.submit.disabled
         ? "rounded-lg bg-blue-300 px-4 py-2 text-sm font-medium text-white cursor-not-allowed"
         : "rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 transition-colors";
     }
 
-    if (internal.ui.verifyPanel) {
-      internal.ui.verifyPanel.classList.toggle("hidden", !isAwaitingOtp);
-    }
-
-    if (internal.ui.otpCopy) {
-      internal.ui.otpCopy.textContent = isAwaitingOtp
-        ? `Enter the 6-digit code sent to ${internal.pendingOtpEmail}.`
-        : "";
-    }
-
-    if (internal.ui.verifyButton) {
-      internal.ui.verifyButton.disabled = internal.isVerifyingOtp;
-      internal.ui.verifyButton.textContent = internal.isVerifyingOtp ? "Verifying..." : "Verify code";
-      internal.ui.verifyButton.className = internal.ui.verifyButton.disabled
-        ? "rounded-lg bg-gray-400 px-4 py-2 text-sm font-medium text-white cursor-not-allowed"
-        : "rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 transition-colors";
-    }
-
-    if (internal.ui.resendButton) {
-      internal.ui.resendButton.disabled = !isAwaitingOtp || internal.isSendingLink;
-    }
-
-    if (internal.ui.changeEmailButton) {
-      internal.ui.changeEmailButton.disabled = !isAwaitingOtp || internal.isVerifyingOtp;
-    }
 
     const accessRequest = getAccessRequestConfig();
     const showAvailableOptions = !isSignedIn;
@@ -565,7 +499,7 @@
         : "text-sm text-gray-500";
     }
 
-    if (!isSignedIn && !internal.isSendingLink) {
+    if (!isSignedIn && !internal.isSigningIn) {
       setInlineMessage("", "text-gray-500");
     }
   }
@@ -638,8 +572,7 @@
     emitAuthChange();
     setSyncStatus("syncing", "Loading your synced data...");
     try {
-      internal.pendingOtpEmail = "";
-      if (internal.ui.otpInput) internal.ui.otpInput.value = "";
+      if (internal.ui.passwordInput) internal.ui.passwordInput.value = "";
       const remoteRow = await ensureUserRow(user);
       const remoteState = sanitizeState({
         writing_data: remoteRow.writing_data,
@@ -738,8 +671,7 @@
         clearLocalStateCache();
         internal.currentState = createDefaultState();
         emitStateChange("sign-out");
-        internal.pendingOtpEmail = "";
-        if (internal.ui.otpInput) internal.ui.otpInput.value = "";
+        if (internal.ui.passwordInput) internal.ui.passwordInput.value = "";
         internal.currentUser = null;
         emitAuthChange();
         setSyncStatus("signed-out", "Signed out.");
@@ -808,75 +740,32 @@
     }
   }
 
-  async function sendMagicLink(email) {
-    return sendEmailOtp(email);
-  }
-
-  async function sendEmailOtp(email) {
+  async function signInWithPassword(email, password) {
     const client = ensureClient();
     if (!client) {
       setInlineMessage("Supabase is not configured yet.", "text-amber-600");
       return;
     }
 
-    internal.isSendingLink = true;
+    internal.isSigningIn = true;
     renderAuthUi();
-    setInlineMessage("Sending your one-time code...", "text-blue-600");
+    setInlineMessage("Signing in...", "text-blue-600");
 
-    const { error } = await client.auth.signInWithOtp({
+    const { error } = await client.auth.signInWithPassword({
       email,
-      options: {
-        shouldCreateUser: false
-      }
+      password
     });
 
-    internal.isSendingLink = false;
+    internal.isSigningIn = false;
 
     if (error) {
       renderAuthUi();
-      setInlineMessage(error.message || "Could not send the one-time code.", "text-amber-600");
+      setInlineMessage(error.message || "Could not sign in.", "text-amber-600");
       return;
     }
 
-    internal.pendingOtpEmail = email;
-    if (internal.ui.emailInput) {
-      internal.ui.emailInput.value = email;
-    }
-    renderAuthUi();
-    if (internal.ui.otpInput) internal.ui.otpInput.focus();
-    setInlineMessage("Check your email for the 6-digit code.", "text-green-600");
-  }
-
-  async function verifyEmailOtp(token) {
-    const client = ensureClient();
-    if (!client) {
-      setInlineMessage("Supabase is not configured yet.", "text-amber-600");
-      return;
-    }
-    if (!internal.pendingOtpEmail) {
-      setInlineMessage("Enter your email first, then request a code.", "text-amber-600");
-      return;
-    }
-
-    internal.isVerifyingOtp = true;
-    renderAuthUi();
-    setInlineMessage("Verifying code...", "text-blue-600");
-
-    const { error } = await client.auth.verifyOtp({
-      email: internal.pendingOtpEmail,
-      token,
-      type: "email"
-    });
-
-    internal.isVerifyingOtp = false;
-    renderAuthUi();
-
-    if (error) {
-      setInlineMessage(error.message || "Could not verify the code.", "text-amber-600");
-      return;
-    }
-
-    setInlineMessage("Code accepted. Loading your synced data...", "text-green-600");
+    if (internal.ui.passwordInput) internal.ui.passwordInput.value = "";
+    setInlineMessage("Signed in. Loading your synced data...", "text-green-600");
   }
 
   async function signOut() {
@@ -884,8 +773,7 @@
     clearLocalStateCache();
     internal.currentState = createDefaultState();
     emitStateChange("sign-out");
-    internal.pendingOtpEmail = "";
-    if (internal.ui.otpInput) internal.ui.otpInput.value = "";
+    if (internal.ui.passwordInput) internal.ui.passwordInput.value = "";
 
     if (!client) {
       internal.currentUser = null;
@@ -921,9 +809,7 @@
     getCurrentUser,
     loadUserState,
     saveUserStatePatch,
-    sendEmailOtp,
-    verifyEmailOtp,
-    sendMagicLink,
+    signInWithPassword,
     signOut,
     isRemoteSyncActive,
     getSyncStatus,

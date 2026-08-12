@@ -314,6 +314,11 @@ source and repository if committed. The email link does not create an account;
 the owner must review the request and manually create a confirmed Auth user.
 Keep server-side public signup disabled.
 
+The included client signs in with email and password. Create each user with a
+different generated password and **Auto Confirm User** enabled. Normal sign-in
+does not require SMTP or a redirect URL; without SMTP, the owner must handle
+forgotten passwords through a trusted server-side admin process.
+
 ## Before publishing
 
 Review the entire repository, not just the configuration file. In particular,

@@ -69,6 +69,10 @@ create approved Auth users manually, and monitor usage. `accessRequest.ownerName
 show a name without publishing an address; setting `accessRequest.email` adds a
 clickable mail link and makes that address visible in the page source.
 
+Shared sync uses owner-created email/password accounts, so normal sign-in works
+without SMTP or redirect URLs. The owner must assign unique strong passwords
+and handle password recovery manually unless email delivery is added later.
+
 When Supabase is not configured, the header stays focused on **Export** and
 **Import**. Once it is configured, that pill becomes the Sync/status control;
 Export and Import remain available inside its dropdown.

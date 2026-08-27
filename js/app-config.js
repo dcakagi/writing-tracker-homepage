@@ -87,7 +87,7 @@ window.APP_CONFIG = {
   // Optional owner name shown to people who need sync access.
   // Add email only if you want to publish a clickable contact address.
   accessRequest: {
-    enabled: true,
+    enabled: false,
     ownerName: "Brady Moon",
     email: "",
     subject: "Homepage sync access request"
@@ -140,9 +140,9 @@ window.APP_CONFIG = {
 
   // Optional cloud sync. Leave disabled for a completely local homepage.
   // Use your own Supabase project; see SUPABASE_SETUP.md.
-  supabase: {
-    enabled: true,
-    url: "https://yvobzyvedhwhigkrmlnx.supabase.co",
-    publishableKey: "sb_publishable_vizibOA97baQj6WQISDazg_SofhiPPK"
-  }
+  //supabase: {
+  //  enabled: true,
+  //  url: "https://yvobzyvedhwhigkrmlnx.supabase.co",
+  //  publishableKey: "sb_publishable_vizibOA97baQj6WQISDazg_SofhiPPK"
+  //}
 };

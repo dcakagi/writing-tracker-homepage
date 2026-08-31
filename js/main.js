@@ -110,7 +110,8 @@
       "weekly-weather": "weeklyWeather",
       quote: "quote",
       "hourly-weather": "hourlyWeather",
-      habit: "habit"
+      habit: "habit",
+      todo: "todo"
     };
     const dashboard = document.getElementById("dashboard-widgets");
     reorderChildren(dashboard, "data-widget-id", config.dashboardWidgetOrder);
@@ -333,6 +334,9 @@
     }
     if (dashboardEnabled && getFeature("habit", true) && window.initializeHabitTracker) {
       window.initializeHabitTracker();
+    }
+    if (dashboardEnabled && getFeature("todo", true) && window.initializeTodoList) {
+      window.initializeTodoList();
     }
   });
 

@@ -16,7 +16,8 @@ window.APP_CONFIG = {
     "weekly-weather",
     "quote",
     "hourly-weather",
-    "habit"
+    "habit",
+    "todo"
   ],
 
   features: {
@@ -27,7 +28,8 @@ window.APP_CONFIG = {
     weeklyWeather: true,
     quote: true,
     hourlyWeather: true,
-    habit: true
+    habit: true,
+    todo: true
   },
 
   timer: {

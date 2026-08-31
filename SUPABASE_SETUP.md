@@ -11,10 +11,12 @@ normal sign-in does not require an SMTP provider or an authentication redirect
 URL. It works from GitHub Pages, another static host, or a locally opened
 `file://` copy.
 
-The same `user_state` row stores writing history, habit state, bookmark
-counters, and browser customization. If you already ran the current
-`supabase/user_state.sql`, customization needs no additional schema change; it
-uses the existing bounded `preferences` column.
+The same `user_state` row stores writing history, habit state, to-do items,
+bookmark counters, and browser customization. Customization needs no additional
+schema change; it uses the existing bounded `preferences` column. To-do items
+do need one: they live in a `todo_data` column added by the current
+`supabase/user_state.sql`. If your project predates the to-do list, see
+[Update an existing project](#update-an-existing-project) below.
 
 There are two valid deployment models:
 
@@ -57,6 +59,18 @@ The rerunnable migration:
 - Lets an authenticated user access only their own row
 - Rejects non-object or unexpectedly large JSON payloads
 - Updates `updated_at` automatically
+
+### Update an existing project
+
+The migration is rerunnable and additive, so an existing project is brought
+forward by pasting the current `supabase/user_state.sql` into the SQL Editor
+and running it again. No data is dropped.
+
+Do this before deploying a version of the page that includes the to-do list.
+If the page loads first, everything except the to-do list keeps syncing and the
+sync panel reports that the to-do list is staying in the browser until the
+`todo_data` column exists. Applying the SQL and reloading clears the warning
+and uploads the items already saved locally.
 
 The SQL Editor runs with administrative privileges, so use the browser tests in
 step 5 to verify the restrictions end to end.

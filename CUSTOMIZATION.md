@@ -17,7 +17,7 @@ active.
 Select **Customize** in the page header. The panel can edit:
 
 - Site title and favicon
-- Section and dashboard-widget visibility and order
+- Section and dashboard-widget visibility and order, including the to-do list
 - Timer label and date
 - Dashboard-backup reminder interval
 - Weather location, coordinates, and units
@@ -65,6 +65,7 @@ window.APP_CONFIG = {
     "quote",
     "hourly-weather",
     "habit",
+    "todo",
   ],
 
   features: {
@@ -76,6 +77,7 @@ window.APP_CONFIG = {
     quote: true,
     hourlyWeather: true,
     habit: true,
+    todo: true,
   },
 
   timer: {
@@ -162,6 +164,7 @@ group:
 dashboardWidgetOrder: [
   "quote",
   "timer",
+  "todo",
   "habit",
   "weekly-weather",
   "hourly-weather",
@@ -185,11 +188,41 @@ features: {
   quote: true,
   hourlyWeather: false,
   habit: true,
+  todo: true,
 },
 ```
 
 Hiding a feature does not necessarily erase data that it previously saved in
 local storage. Cloud sync is controlled separately by `supabase.enabled`.
+
+## The to-do list widget
+
+The to-do widget is a dashboard widget with the identifier `todo` and the
+feature flag `todo`. Its contents are personal data rather than configuration,
+so items are edited on the page instead of in `js/app-config.js`.
+
+Each item has:
+
+- A title and an optional target date. A target date in the past is labelled
+  **Overdue** until the item is finished.
+- A status of **Not started**, **In progress**, or **Finished**. Choosing
+  **Finished** stamps the completion date and opens the item so a closing note
+  can be written straight away.
+- **Working notes** for where the item stands, and **post-completion notes** for
+  the outcome. Select an item's title, or the chevron, to show or hide both.
+
+The arrows reorder items, the filter chips narrow the list by status, and
+**Clear finished** removes every finished item at once. Removing an item also
+removes its notes, so both actions ask for confirmation first.
+
+The list holds up to 100 items. Titles are capped at 200 characters and each
+note field at 2000 characters.
+
+To-do items are saved with the rest of your tracker data: in this browser by
+default, and in `user_state.todo_data` when you are signed in for cloud sync.
+An existing Supabase project needs `supabase/user_state.sql` reapplied to add
+the `todo_data` column. Until it is applied, the rest of your data keeps
+syncing and the sync panel explains that the to-do list is staying local.
 
 ## Set the timer
 
@@ -290,7 +323,8 @@ are stored only in the current browser profile. They are not written into
 `js/app-config.js` and are not committed to Git.
 
 - Use **Export** to download a versioned JSON backup of writing history, habit
-  data, bookmark counters, and browser customization.
+  data, to-do items and their notes, bookmark counters, and browser
+  customization.
 - Use **Import** to replace those saved areas from a full backup. The page asks
   for confirmation first and reloads after a successful import.
 - Older writing-only exports remain supported and replace only writing history.

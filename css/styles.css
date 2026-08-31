@@ -166,6 +166,103 @@ button {
   margin: 0;
 }
 
+/* To-Do List Widget */
+.todo-field-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: rgb(55 65 81);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.todo-field {
+  width: 100%;
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.6rem;
+  background: white;
+  padding: 0.45rem 0.6rem;
+  color: rgb(31 41 55);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.todo-field:focus {
+  border-color: rgb(96 165 250);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.todo-status {
+  flex: 0 0 auto;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 9999px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.todo-status:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.55);
+  outline-offset: 1px;
+}
+
+.todo-filter {
+  border-radius: 9999px;
+  background: rgb(243 244 246);
+  padding: 0.3rem 0.65rem;
+  color: rgb(75 85 99);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.todo-filter:hover {
+  background: rgb(229 231 235);
+}
+
+.todo-filter-active {
+  background: rgb(17 24 39);
+  color: white;
+}
+
+.todo-filter-active:hover {
+  background: rgb(31 41 55);
+}
+
+.todo-icon-button {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgb(243 244 246);
+  color: rgb(75 85 99);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.todo-icon-button:hover:not(:disabled) {
+  background: rgb(229 231 235);
+}
+
+.todo-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+#todo-list {
+  scrollbar-width: thin;
+}
+
+#todo-widget button:hover {
+  transform: none;
+}
+
 /* Card Hover Effects */
 .bg-white.shadow-lg:hover {
   transform: translateY(-1px);

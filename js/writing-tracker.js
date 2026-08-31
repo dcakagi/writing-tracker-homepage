@@ -1118,6 +1118,7 @@ function wtExportData() {
     : {
         writing_data: wtData,
         habit_data: {},
+        todo_data: {},
         bookmark_counts: {},
         preferences: {}
       };
@@ -1159,7 +1160,7 @@ async function wtImportFullBackup(backup) {
   }
 
   const shouldImport = window.confirm(
-    'Import this homepage backup?\n\nThis replaces writing history, habit data, bookmark counts, and browser customization.' +
+    'Import this homepage backup?\n\nThis replaces writing history, habit data, to-do items, bookmark counts, and browser customization.' +
     (homepageState.isRemoteSyncActive() ? '\n\nBecause you are signed in, the imported copy will also replace your synced data.' : '')
   );
   if (!shouldImport) return false;
@@ -1175,6 +1176,7 @@ async function wtImportFullBackup(backup) {
   await homepageState.saveUserStatePatch({
     writing_data: wtIsPlainObject(rawState.writing_data) ? rawState.writing_data : {},
     habit_data: wtIsPlainObject(rawState.habit_data) ? rawState.habit_data : {},
+    todo_data: wtIsPlainObject(rawState.todo_data) ? rawState.todo_data : {},
     bookmark_counts: wtIsPlainObject(rawState.bookmark_counts) ? rawState.bookmark_counts : {},
     preferences
   });
@@ -1199,7 +1201,7 @@ async function wtImportFullBackup(backup) {
 
 async function wtImportLegacyWritingBackup(imported) {
   const shouldImport = window.confirm(
-    'Import this older writing-only backup?\n\nThis replaces writing history but keeps habit data, bookmarks, and customization.'
+    'Import this older writing-only backup?\n\nThis replaces writing history but keeps habit data, to-do items, bookmarks, and customization.'
   );
   if (!shouldImport) return false;
 

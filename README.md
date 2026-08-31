@@ -1,7 +1,7 @@
 # Personal Writing Tracker Homepage
 
 A configurable, no-build dashboard for bookmarks, writing progress, habits,
-weather, quotes, and a personal countdown/count-up timer.
+a to-do list, weather, quotes, and a personal countdown/count-up timer.
 
 Try the shared version at
 [bradymoon.com/writing-tracker-homepage](https://bradymoon.com/writing-tracker-homepage/).
@@ -95,7 +95,7 @@ The **Customize** panel currently supports:
 - Countdown/count-up timer label and date
 - Dashboard-backup reminder interval
 - Main-section visibility and order
-- Dashboard-widget visibility and order
+- Dashboard-widget visibility and order, including the to-do list
 - Weather location, coordinates, and units
 - Quotes
 - Bookmarks, their order, icons, stable IDs, and new-tab behavior
@@ -114,9 +114,9 @@ changing browsers or profiles, switching between the hosted and `file://`
 versions, or some cleanup tools can remove it.
 
 The **Export** control downloads one versioned JSON backup containing writing
-history, habit data, bookmark counters, and browser customization. **Import**
-restores those areas after asking for confirmation. Older writing-only exports
-remain supported and replace only writing history.
+history, habit data, to-do items and their notes, bookmark counters, and browser
+customization. **Import** restores those areas after asking for confirmation.
+Older writing-only exports remain supported and replace only writing history.
 
 Backups intentionally exclude passwords, Supabase connection/owner settings,
 the current Auth session, and a writing timer that is actively running. Keep a
@@ -138,8 +138,9 @@ the backup/sync pill for request instructions.
 An access request does not create an account. The owner reviews it and creates
 a confirmed Supabase Auth user manually. 
 
-When signed in, writing history, habit state, bookmark counters, and browser
-customization are stored in the account's protected `user_state` row. Signing
+When signed in, writing history, habit state, to-do items, bookmark counters,
+and browser customization are stored in the account's protected `user_state`
+row. Signing
 out clears that account's synced state from the current browser and returns the
 page to its public defaults.
 

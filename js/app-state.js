@@ -4,6 +4,7 @@
   const LEGACY_KEYS = {
     writing: "wt_data_2025",
     habit: "habitTracker.v1",
+    todo: "todoList.v1",
     export: "wt_last_export",
     activeTimer: "wtActiveTimer"
   };
@@ -11,6 +12,10 @@
   const AUTH_EVENT = "homepage-auth-changed";
   const SYNC_EVENT = "homepage-sync-changed";
   const SYNC_DEBOUNCE_MS = 800;
+  const TODO_STATUSES = ["not-started", "in-progress", "done"];
+  const TODO_MAX_ITEMS = 100;
+  const TODO_MAX_TITLE = 200;
+  const TODO_MAX_NOTES = 2000;
 
   const internal = {
     client: null,
@@ -23,6 +28,7 @@
     syncTimer: null,
     isSigningIn: false,
     loadingUserId: null,
+    todoColumnAvailable: true,
     ui: {}
   };
 
@@ -38,6 +44,7 @@
     return {
       writing_data: {},
       habit_data: {},
+      todo_data: {},
       bookmark_counts: {},
       preferences: {}
     };
@@ -104,6 +111,54 @@
     return result;
   }
 
+  function sanitizeTodoText(value, maxLength) {
+    return typeof value === "string" ? value.slice(0, maxLength) : "";
+  }
+
+  function sanitizeTodoTimestamp(value) {
+    if (typeof value !== "string" || !value.trim()) return "";
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
+  }
+
+  function sanitizeTodoDueDate(value) {
+    return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())
+      ? value.trim()
+      : "";
+  }
+
+  function sanitizeTodoData(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    const seenIds = new Set();
+    const items = (Array.isArray(value.items) ? value.items : [])
+      .slice(0, TODO_MAX_ITEMS)
+      .reduce((result, item, index) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return result;
+        const title = sanitizeTodoText(item.title, TODO_MAX_TITLE).trim();
+        if (!title) return result;
+
+        let id = typeof item.id === "string" ? item.id.trim().slice(0, 64) : "";
+        if (!id || seenIds.has(id)) id = `todo-${index + 1}-${Math.random().toString(36).slice(2, 8)}`;
+        seenIds.add(id);
+
+        const status = TODO_STATUSES.includes(item.status) ? item.status : "not-started";
+        result.push({
+          id,
+          title,
+          status,
+          notes: sanitizeTodoText(item.notes, TODO_MAX_NOTES),
+          completionNotes: sanitizeTodoText(item.completionNotes, TODO_MAX_NOTES),
+          dueDate: sanitizeTodoDueDate(item.dueDate),
+          createdAt: sanitizeTodoTimestamp(item.createdAt),
+          updatedAt: sanitizeTodoTimestamp(item.updatedAt),
+          completedAt: status === "done" ? sanitizeTodoTimestamp(item.completedAt) : ""
+        });
+        return result;
+      }, []);
+
+    return items.length ? { items } : {};
+  }
+
   function sanitizeBookmarkCounts(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
     const result = {};
@@ -126,6 +181,7 @@
     if (!value || typeof value !== "object") return next;
     next.writing_data = sanitizeWritingData(value.writing_data);
     next.habit_data = sanitizeHabitData(value.habit_data);
+    next.todo_data = sanitizeTodoData(value.todo_data);
     next.bookmark_counts = sanitizeBookmarkCounts(value.bookmark_counts);
     next.preferences = sanitizePreferences(value.preferences);
     return next;
@@ -142,6 +198,11 @@
     return Array.isArray(habit.checked) && habit.checked.some(Boolean);
   }
 
+  function hasTodoData(value) {
+    const todo = sanitizeTodoData(value);
+    return Array.isArray(todo.items) && todo.items.length > 0;
+  }
+
   function hasBookmarkData(value) {
     const bookmarks = sanitizeBookmarkCounts(value);
     return Object.values(bookmarks).some((count) => count > 0);
@@ -152,6 +213,7 @@
     return (
       hasWritingData(state.writing_data) ||
       hasHabitData(state.habit_data) ||
+      hasTodoData(state.todo_data) ||
       hasBookmarkData(state.bookmark_counts) ||
       Object.keys(state.preferences).length > 0
     );
@@ -160,6 +222,7 @@
   function readLegacyState() {
     const writingData = sanitizeWritingData(parseStoredJson(LEGACY_KEYS.writing, {}));
     const habitData = sanitizeHabitData(parseStoredJson(LEGACY_KEYS.habit, {}));
+    const todoData = sanitizeTodoData(parseStoredJson(LEGACY_KEYS.todo, {}));
     const bookmarkCounts = {};
 
     getBookmarkKeys().forEach((key) => {
@@ -173,6 +236,7 @@
     return sanitizeState({
       writing_data: writingData,
       habit_data: habitData,
+      todo_data: todoData,
       bookmark_counts: bookmarkCounts,
       preferences: {}
     });
@@ -189,6 +253,7 @@
     return sanitizeState({
       writing_data: hasWritingData(cached.writing_data) ? cached.writing_data : legacy.writing_data,
       habit_data: hasHabitData(cached.habit_data) ? cached.habit_data : legacy.habit_data,
+      todo_data: hasTodoData(cached.todo_data) ? cached.todo_data : legacy.todo_data,
       bookmark_counts: hasBookmarkData(cached.bookmark_counts) ? cached.bookmark_counts : legacy.bookmark_counts,
       preferences: cached.preferences
     });
@@ -197,6 +262,7 @@
   function mirrorLegacyState(state) {
     localStorage.setItem(LEGACY_KEYS.writing, JSON.stringify(state.writing_data || {}));
     localStorage.setItem(LEGACY_KEYS.habit, JSON.stringify(state.habit_data || {}));
+    localStorage.setItem(LEGACY_KEYS.todo, JSON.stringify(state.todo_data || {}));
 
     getBookmarkKeys().forEach((key) => {
       localStorage.setItem(key, String((state.bookmark_counts && state.bookmark_counts[key]) || 0));
@@ -213,6 +279,7 @@
     localStorage.removeItem(CACHE_KEY);
     localStorage.removeItem(LEGACY_KEYS.writing);
     localStorage.removeItem(LEGACY_KEYS.habit);
+    localStorage.removeItem(LEGACY_KEYS.todo);
     localStorage.removeItem(LEGACY_KEYS.activeTimer);
     getBookmarkKeys().forEach((key) => localStorage.removeItem(key));
   }
@@ -506,13 +573,26 @@
 
   function buildDbRecord(user, state) {
     const sanitized = sanitizeState(state);
-    return {
+    const record = {
       user_id: user.id,
       writing_data: sanitized.writing_data,
       habit_data: sanitized.habit_data,
       bookmark_counts: sanitized.bookmark_counts,
       preferences: sanitized.preferences
     };
+    if (internal.todoColumnAvailable) record.todo_data = sanitized.todo_data;
+    return record;
+  }
+
+  // A Supabase project created before the to-do list feature has no todo_data
+  // column. Everything else should keep syncing while the owner applies the SQL.
+  function isMissingTodoColumnError(error) {
+    if (!error) return false;
+    const details = [error.message, error.details, error.hint, error.code]
+      .filter((part) => typeof part === "string")
+      .join(" ")
+      .toLowerCase();
+    return details.includes("todo_data");
   }
 
   async function ensureUserRow(user) {
@@ -555,12 +635,19 @@
   async function writeRemoteState(user, nextState) {
     const client = ensureClient();
     if (!client || !user) return;
-    const payload = buildDbRecord(user, nextState);
     const { error } = await client
       .from("user_state")
-      .upsert(payload, { onConflict: "user_id" });
+      .upsert(buildDbRecord(user, nextState), { onConflict: "user_id" });
 
-    if (error) throw error;
+    if (!error) return;
+    if (!internal.todoColumnAvailable || !isMissingTodoColumnError(error)) throw error;
+
+    internal.todoColumnAvailable = false;
+    const retry = await client
+      .from("user_state")
+      .upsert(buildDbRecord(user, nextState), { onConflict: "user_id" });
+
+    if (retry.error) throw retry.error;
   }
 
   async function handleSignedInUser(user) {
@@ -577,6 +664,7 @@
       const remoteState = sanitizeState({
         writing_data: remoteRow.writing_data,
         habit_data: remoteRow.habit_data,
+        todo_data: remoteRow.todo_data,
         bookmark_counts: remoteRow.bookmark_counts,
         preferences: remoteRow.preferences
       });
@@ -587,6 +675,15 @@
       let chosenState = remoteState;
       const remoteHasData = hasMeaningfulState(remoteState);
       const localHasData = hasMeaningfulState(localState);
+
+      // todo_data was added after the other columns, so an already-migrated
+      // account can hold synced data while its to-do items exist only here.
+      // Carry those forward rather than letting an empty column clear them.
+      // A first migration is left alone: its prompt already covers every field.
+      const carryLocalTodos = migrationComplete &&
+        !hasTodoData(remoteState.todo_data) &&
+        hasTodoData(localState.todo_data);
+      if (carryLocalTodos) remoteState.todo_data = localState.todo_data;
 
       if (!migrationComplete && !remoteHasData && localHasData) {
         const shouldImport = window.confirm(
@@ -611,7 +708,15 @@
       internal.currentState = sanitizeState(chosenState);
       persistLocalState(internal.currentState);
       emitStateChange("remote-load");
-      setSyncStatus("synced", "Signed in and synced.");
+      if (carryLocalTodos && chosenState === remoteState) scheduleSync();
+      if (internal.todoColumnAvailable) {
+        setSyncStatus("synced", "Signed in and synced.");
+      } else {
+        setSyncStatus(
+          "not-synced",
+          "Signed in. The to-do list stays in this browser until supabase/user_state.sql adds the todo_data column."
+        );
+      }
     } finally {
       internal.loadingUserId = null;
     }
@@ -628,7 +733,14 @@
 
     try {
       await writeRemoteState(internal.currentUser, internal.currentState);
-      setSyncStatus("synced", "All changes synced.");
+      if (internal.todoColumnAvailable) {
+        setSyncStatus("synced", "All changes synced.");
+      } else {
+        setSyncStatus(
+          "not-synced",
+          "Synced, except the to-do list. Apply supabase/user_state.sql to add the todo_data column."
+        );
+      }
       return true;
     } catch (error) {
       setSyncStatus("not-synced", `Last sync failed: ${error.message || "Unknown error"}`);
@@ -725,6 +837,9 @@
       habit_data: Object.prototype.hasOwnProperty.call(patch || {}, "habit_data")
         ? patch.habit_data
         : internal.currentState.habit_data,
+      todo_data: Object.prototype.hasOwnProperty.call(patch || {}, "todo_data")
+        ? patch.todo_data
+        : internal.currentState.todo_data,
       bookmark_counts: Object.prototype.hasOwnProperty.call(patch || {}, "bookmark_counts")
         ? patch.bookmark_counts
         : internal.currentState.bookmark_counts,

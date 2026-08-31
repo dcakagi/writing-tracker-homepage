@@ -16,7 +16,8 @@
     { id: "weekly-weather", label: "Weekly weather", feature: "weeklyWeather" },
     { id: "quote", label: "Quote", feature: "quote" },
     { id: "hourly-weather", label: "24-hour weather", feature: "hourlyWeather" },
-    { id: "habit", label: "Habit tracker", feature: "habit" }
+    { id: "habit", label: "Habit tracker", feature: "habit" },
+    { id: "todo", label: "To-do list", feature: "todo" }
   ];
 
   function clone(value) {
@@ -115,7 +116,7 @@
     const baseFeatures = isPlainObject(base.features) ? base.features : {};
 
     const features = {};
-    ["dashboard", "writing", "bookmarks", "timer", "weeklyWeather", "quote", "hourlyWeather", "habit"]
+    ["dashboard", "writing", "bookmarks", "timer", "weeklyWeather", "quote", "hourlyWeather", "habit", "todo"]
       .forEach((key) => {
         features[key] = typeof inputFeatures[key] === "boolean"
           ? inputFeatures[key]

@@ -10,7 +10,7 @@ window.APP_CONFIG = {
     favicon: "https://emojiapi.dev/api/v1/rocket/64.png"
   },
 
-  sectionOrder: ["writing", "bookmarks", "dashboard"],
+  sectionOrder: ["writing", "reading", "bookmarks", "dashboard"],
   dashboardWidgetOrder: [
     "timer",
     "weekly-weather",
@@ -23,6 +23,7 @@ window.APP_CONFIG = {
   features: {
     dashboard: true,
     writing: true,
+    reading: true,
     bookmarks: true,
     timer: true,
     weeklyWeather: true,

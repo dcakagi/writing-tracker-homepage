@@ -16,6 +16,10 @@
   const TODO_MAX_ITEMS = 100;
   const TODO_MAX_TITLE = 200;
   const TODO_MAX_NOTES = 2000;
+  const WRITING_MAX_SESSIONS_PER_DAY = 100;
+  const WRITING_MAX_NOTE = 4000;
+  const PAPER_MAX_ITEMS = 2000;
+  const PAPER_MAX_NOTES = 8000;
 
   const internal = {
     client: null,
@@ -29,6 +33,7 @@
     isSigningIn: false,
     loadingUserId: null,
     todoColumnAvailable: true,
+    paperColumnAvailable: true,
     ui: {}
   };
 
@@ -43,6 +48,7 @@
   function createDefaultState() {
     return {
       writing_data: {},
+      paper_data: {},
       habit_data: {},
       todo_data: {},
       bookmark_counts: {},
@@ -89,11 +95,77 @@
     Object.keys(value).forEach((dateKey) => {
       const entry = value[dateKey];
       if (!entry || typeof entry !== "object") return;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return;
       const time = Number(entry.time);
       if (!Number.isFinite(time) || time < 0) return;
-      result[dateKey] = { time: Math.round(time) };
+      const cleanEntry = { time: Math.round(time) };
+      if (typeof entry.note === "string" && entry.note.trim()) {
+        cleanEntry.note = entry.note.slice(0, WRITING_MAX_NOTE);
+      }
+      if (Array.isArray(entry.sessions)) {
+        const seenIds = new Set();
+        const sessions = entry.sessions
+          .slice(0, WRITING_MAX_SESSIONS_PER_DAY)
+          .reduce((items, session, index) => {
+            if (!session || typeof session !== "object" || Array.isArray(session)) return items;
+            const seconds = Number(session.seconds);
+            if (!Number.isFinite(seconds) || seconds <= 0) return items;
+            let id = typeof session.id === "string" ? session.id.trim().slice(0, 80) : "";
+            if (!id || seenIds.has(id)) id = `writing-${dateKey}-${index + 1}`;
+            seenIds.add(id);
+            const savedAt = sanitizeTodoTimestamp(session.savedAt);
+            items.push({
+              id,
+              seconds: Math.round(seconds),
+              note: typeof session.note === "string" ? session.note.slice(0, WRITING_MAX_NOTE) : "",
+              savedAt
+            });
+            return items;
+          }, []);
+        if (sessions.length) cleanEntry.sessions = sessions;
+      }
+      result[dateKey] = cleanEntry;
     });
     return result;
+  }
+
+  function sanitizePaperData(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    const seenIds = new Set();
+    const papers = (Array.isArray(value.papers) ? value.papers : [])
+      .slice(0, PAPER_MAX_ITEMS)
+      .reduce((items, paper, index) => {
+        if (!paper || typeof paper !== "object" || Array.isArray(paper)) return items;
+        const title = sanitizeTodoText(paper.title, 1000).trim();
+        const readDate = sanitizeTodoDueDate(paper.readDate);
+        if (!title || !readDate) return items;
+        let id = typeof paper.id === "string" ? paper.id.trim().slice(0, 80) : "";
+        if (!id || seenIds.has(id)) id = `paper-${index + 1}-${Math.random().toString(36).slice(2, 8)}`;
+        seenIds.add(id);
+        const rawUrl = sanitizeTodoText(paper.url, 2000).trim();
+        let url = "";
+        try {
+          const parsed = new URL(rawUrl);
+          if (parsed.protocol === "http:" || parsed.protocol === "https:") url = parsed.href;
+        } catch (error) {
+          url = "";
+        }
+        items.push({
+          id,
+          title,
+          authors: sanitizeTodoText(paper.authors, 1000).trim(),
+          publicationDate: sanitizeTodoText(paper.publicationDate, 80).trim(),
+          venue: sanitizeTodoText(paper.venue, 500).trim(),
+          doi: sanitizeTodoText(paper.doi, 300).trim(),
+          url,
+          readDate,
+          notes: sanitizeTodoText(paper.notes, PAPER_MAX_NOTES),
+          createdAt: sanitizeTodoTimestamp(paper.createdAt),
+          updatedAt: sanitizeTodoTimestamp(paper.updatedAt)
+        });
+        return items;
+      }, []);
+    return papers.length ? { papers } : {};
   }
 
   function sanitizeHabitData(value) {
@@ -180,6 +252,7 @@
     const next = createDefaultState();
     if (!value || typeof value !== "object") return next;
     next.writing_data = sanitizeWritingData(value.writing_data);
+    next.paper_data = sanitizePaperData(value.paper_data);
     next.habit_data = sanitizeHabitData(value.habit_data);
     next.todo_data = sanitizeTodoData(value.todo_data);
     next.bookmark_counts = sanitizeBookmarkCounts(value.bookmark_counts);
@@ -198,6 +271,11 @@
     return Array.isArray(habit.checked) && habit.checked.some(Boolean);
   }
 
+  function hasPaperData(value) {
+    const paperData = sanitizePaperData(value);
+    return Array.isArray(paperData.papers) && paperData.papers.length > 0;
+  }
+
   function hasTodoData(value) {
     const todo = sanitizeTodoData(value);
     return Array.isArray(todo.items) && todo.items.length > 0;
@@ -212,6 +290,7 @@
     const state = sanitizeState(value);
     return (
       hasWritingData(state.writing_data) ||
+      hasPaperData(state.paper_data) ||
       hasHabitData(state.habit_data) ||
       hasTodoData(state.todo_data) ||
       hasBookmarkData(state.bookmark_counts) ||
@@ -235,6 +314,7 @@
 
     return sanitizeState({
       writing_data: writingData,
+      paper_data: {},
       habit_data: habitData,
       todo_data: todoData,
       bookmark_counts: bookmarkCounts,
@@ -252,6 +332,7 @@
 
     return sanitizeState({
       writing_data: hasWritingData(cached.writing_data) ? cached.writing_data : legacy.writing_data,
+      paper_data: cached.paper_data,
       habit_data: hasHabitData(cached.habit_data) ? cached.habit_data : legacy.habit_data,
       todo_data: hasTodoData(cached.todo_data) ? cached.todo_data : legacy.todo_data,
       bookmark_counts: hasBookmarkData(cached.bookmark_counts) ? cached.bookmark_counts : legacy.bookmark_counts,
@@ -581,6 +662,7 @@
       preferences: sanitized.preferences
     };
     if (internal.todoColumnAvailable) record.todo_data = sanitized.todo_data;
+    if (internal.paperColumnAvailable) record.paper_data = sanitized.paper_data;
     return record;
   }
 
@@ -593,6 +675,15 @@
       .join(" ")
       .toLowerCase();
     return details.includes("todo_data");
+  }
+
+  function isMissingPaperColumnError(error) {
+    if (!error) return false;
+    const details = [error.message, error.details, error.hint, error.code]
+      .filter((part) => typeof part === "string")
+      .join(" ")
+      .toLowerCase();
+    return details.includes("paper_data");
   }
 
   async function ensureUserRow(user) {
@@ -640,14 +731,30 @@
       .upsert(buildDbRecord(user, nextState), { onConflict: "user_id" });
 
     if (!error) return;
-    if (!internal.todoColumnAvailable || !isMissingTodoColumnError(error)) throw error;
+    if (internal.todoColumnAvailable && isMissingTodoColumnError(error)) {
+      internal.todoColumnAvailable = false;
+    } else if (internal.paperColumnAvailable && isMissingPaperColumnError(error)) {
+      internal.paperColumnAvailable = false;
+    } else {
+      throw error;
+    }
 
-    internal.todoColumnAvailable = false;
     const retry = await client
       .from("user_state")
       .upsert(buildDbRecord(user, nextState), { onConflict: "user_id" });
+    if (!retry.error) return;
+    if (internal.todoColumnAvailable && isMissingTodoColumnError(retry.error)) {
+      internal.todoColumnAvailable = false;
+    } else if (internal.paperColumnAvailable && isMissingPaperColumnError(retry.error)) {
+      internal.paperColumnAvailable = false;
+    } else {
+      throw retry.error;
+    }
 
-    if (retry.error) throw retry.error;
+    const finalRetry = await client
+      .from("user_state")
+      .upsert(buildDbRecord(user, nextState), { onConflict: "user_id" });
+    if (finalRetry.error) throw finalRetry.error;
   }
 
   async function handleSignedInUser(user) {
@@ -663,6 +770,7 @@
       const remoteRow = await ensureUserRow(user);
       const remoteState = sanitizeState({
         writing_data: remoteRow.writing_data,
+        paper_data: remoteRow.paper_data,
         habit_data: remoteRow.habit_data,
         todo_data: remoteRow.todo_data,
         bookmark_counts: remoteRow.bookmark_counts,
@@ -684,6 +792,10 @@
         !hasTodoData(remoteState.todo_data) &&
         hasTodoData(localState.todo_data);
       if (carryLocalTodos) remoteState.todo_data = localState.todo_data;
+      const carryLocalPapers = migrationComplete &&
+        !hasPaperData(remoteState.paper_data) &&
+        hasPaperData(localState.paper_data);
+      if (carryLocalPapers) remoteState.paper_data = localState.paper_data;
 
       if (!migrationComplete && !remoteHasData && localHasData) {
         const shouldImport = window.confirm(
@@ -708,13 +820,13 @@
       internal.currentState = sanitizeState(chosenState);
       persistLocalState(internal.currentState);
       emitStateChange("remote-load");
-      if (carryLocalTodos && chosenState === remoteState) scheduleSync();
-      if (internal.todoColumnAvailable) {
+      if ((carryLocalTodos || carryLocalPapers) && chosenState === remoteState) scheduleSync();
+      if (internal.todoColumnAvailable && internal.paperColumnAvailable) {
         setSyncStatus("synced", "Signed in and synced.");
       } else {
         setSyncStatus(
           "not-synced",
-          "Signed in. The to-do list stays in this browser until supabase/user_state.sql adds the todo_data column."
+          "Signed in. Some newer tracker data stays in this browser until supabase/user_state.sql is applied."
         );
       }
     } finally {
@@ -733,12 +845,12 @@
 
     try {
       await writeRemoteState(internal.currentUser, internal.currentState);
-      if (internal.todoColumnAvailable) {
+      if (internal.todoColumnAvailable && internal.paperColumnAvailable) {
         setSyncStatus("synced", "All changes synced.");
       } else {
         setSyncStatus(
           "not-synced",
-          "Synced, except the to-do list. Apply supabase/user_state.sql to add the todo_data column."
+          "Partially synced. Apply supabase/user_state.sql to add the latest tracker columns."
         );
       }
       return true;
@@ -834,6 +946,9 @@
       writing_data: Object.prototype.hasOwnProperty.call(patch || {}, "writing_data")
         ? patch.writing_data
         : internal.currentState.writing_data,
+      paper_data: Object.prototype.hasOwnProperty.call(patch || {}, "paper_data")
+        ? patch.paper_data
+        : internal.currentState.paper_data,
       habit_data: Object.prototype.hasOwnProperty.call(patch || {}, "habit_data")
         ? patch.habit_data
         : internal.currentState.habit_data,

@@ -57,7 +57,7 @@ window.APP_CONFIG = {
     favicon: "https://emojiapi.dev/api/v1/rocket/64.png",
   },
 
-  sectionOrder: ["writing", "bookmarks", "dashboard"],
+  sectionOrder: ["writing", "reading", "bookmarks", "dashboard"],
 
   dashboardWidgetOrder: [
     "timer",
@@ -71,6 +71,7 @@ window.APP_CONFIG = {
   features: {
     dashboard: true,
     writing: true,
+    reading: true,
     bookmarks: true,
     timer: true,
     weeklyWeather: true,
@@ -148,7 +149,7 @@ string.
 `sectionOrder` controls the page's top-level groups:
 
 ```js
-sectionOrder: ["writing", "bookmarks", "dashboard"],
+sectionOrder: ["writing", "reading", "bookmarks", "dashboard"],
 ```
 
 Move an identifier earlier or later in the array to move that section. Keep
@@ -182,6 +183,7 @@ Set a value in `features` to `true` to show that feature or `false` to hide it:
 features: {
   dashboard: true,
   writing: true,
+  reading: true,
   bookmarks: true,
   timer: false,
   weeklyWeather: true,
@@ -322,8 +324,9 @@ With sync disabled or while signed out, tracker data and browser customization
 are stored only in the current browser profile. They are not written into
 `js/app-config.js` and are not committed to Git.
 
-- Use **Export** to download a versioned JSON backup of writing history, habit
-  data, to-do items and their notes, bookmark counters, and browser
+- Use **Export** to download a versioned JSON backup of writing history and
+  session notes, writing goals, papers and their notes, habit data, to-do items
+  and their notes, bookmark counters, and browser
   customization.
 - Use **Import** to replace those saved areas from a full backup. The page asks
   for confirmation first and reloads after a successful import.

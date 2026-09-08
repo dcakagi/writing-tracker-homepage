@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A configurable local-first personal dashboard for writing, habits, weather, quotes, and bookmarks.">
+  <meta name="description" content="A configurable local-first personal dashboard for writing sessions and goals, papers read, habits, weather, quotes, and bookmarks.">
   <title>My Homepage</title>
   <link id="app-favicon" rel="icon" href="https://emojiapi.dev/api/v1/rocket/64.png">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -237,16 +237,31 @@
         <div class="w-full grid grid-cols-2 gap-3 items-stretch">
           <div class="col-span-1 bg-gray-50 rounded-lg p-3 flex flex-col items-center justify-center">
             <div id="wt-currentStreakWidget" class="mb-2"></div>
-            <div class="text-sm text-gray-700">Current streak</div>
+            <div class="text-sm text-gray-700">Goal streak</div>
           </div>
           <div class="col-span-1 bg-gray-50 rounded-lg p-3 flex flex-col items-center justify-center">
             <div id="wt-maxStreakWidget" class="mb-2 text-2xl font-bold text-gray-800"></div>
-            <div class="text-sm text-gray-700">Max streak</div>
+            <div class="text-sm text-gray-700">Goal days</div>
           </div>
           <div class="col-span-2 bg-gray-50 rounded-lg p-3 flex flex-col">
             <div class="text-sm text-gray-700 mb-2">Most productive day</div>
             <div id="wt-productiveWeekday"></div>
           </div>
+        </div>
+        <div class="mt-4 border-t border-gray-100 pt-4">
+          <label for="wt-goalMinutes" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Daily goal</label>
+          <div class="mt-2 flex items-center gap-2">
+            <input id="wt-goalMinutes" type="number" min="1" max="1440" value="30" class="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+            <span class="text-xs text-gray-500">min</span>
+            <button id="wt-goalSaveBtn" type="button" class="rounded-lg bg-gray-800 px-3 py-2 text-xs font-medium text-white hover:bg-gray-900">Save</button>
+          </div>
+          <div class="mt-3 text-xs font-medium text-gray-600">Exclude a holiday</div>
+          <div class="mt-2 flex gap-2">
+            <input id="wt-holidayDate" type="date" class="min-w-0 flex-1 rounded-lg border border-gray-300 px-2 py-2 text-xs" />
+            <button id="wt-holidayAddBtn" type="button" class="rounded-lg bg-gray-100 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-200">Add</button>
+          </div>
+          <div id="wt-holidayList" class="mt-2 flex flex-wrap gap-1.5"></div>
+          <div id="wt-goalMsg" class="mt-2 min-h-[1rem] text-xs text-gray-500" aria-live="polite"></div>
         </div>
       </div>
 
@@ -260,7 +275,7 @@
         </div>
         <div id="wt-streak" class="text-sm text-blue-600 font-medium mb-4 text-center"></div>
         <div id="wt-calendar" class="grid grid-cols-7 gap-1"></div>
-        <div class="mt-3 text-xs text-gray-500">Click any day to edit its writing time.</div>
+        <div class="mt-3 text-center text-xs text-gray-500">A green outline marks a met goal. A dot means work details are saved.</div>
       </div>
 
       <!-- Monthly Totals & Activity (moved up) -->
@@ -313,12 +328,110 @@
           <button id="wt-addMinutesBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">Add</button>
         </div>
 
+        <label for="wt-sessionNote" class="mb-1 w-full text-left text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">What are you working on?</label>
+        <textarea id="wt-sessionNote" maxlength="4000" rows="3" placeholder="Chapter, section, argument, revision…" class="mb-3 w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        <p class="mb-4 w-full text-left text-xs leading-relaxed text-gray-500">This note is saved with the timer session or manually added minutes.</p>
+
         <!-- Session Message -->
         <div id="wt-sessionMsg" class="text-sm text-blue-600 mb-4 min-h-[1.25rem]"></div>
 
       </div>
 
 
+    </div>
+  </section>
+
+  <!-- Paper Reading Tracker Section -->
+  <section data-section-id="reading" class="w-full max-w-6xl mx-auto">
+    <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">Reading practice</div>
+        <h2 class="text-xl font-semibold text-gray-800">Paper Tracker</h2>
+      </div>
+      <div id="pt-weekSummary" class="text-sm text-gray-600"></div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div class="rounded-2xl bg-white p-6 shadow-lg lg:col-span-2">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 id="pt-formHeading" class="text-lg font-semibold text-gray-800">Log a paper</h3>
+            <p class="mt-1 text-sm text-gray-500">Start with a DOI to fill citation details, or enter them yourself.</p>
+          </div>
+          <button id="pt-cancelEdit" type="button" class="hidden rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200">Cancel edit</button>
+        </div>
+        <form id="pt-paperForm" class="mt-5 space-y-4">
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <label class="min-w-0 flex-1">
+              <span class="paper-field-label">DOI</span>
+              <input id="pt-doi" type="text" maxlength="300" placeholder="10.1000/example" class="paper-field" />
+            </label>
+            <button id="pt-doiLookup" type="button" class="self-end rounded-lg bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-wait disabled:opacity-60">Fill from DOI</button>
+          </div>
+          <div id="pt-lookupMsg" class="min-h-[1.25rem] text-sm text-gray-500" aria-live="polite"></div>
+          <label class="block">
+            <span class="paper-field-label">Title *</span>
+            <input id="pt-title" type="text" maxlength="1000" required class="paper-field" />
+          </label>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="paper-field-label">Authors</span>
+              <input id="pt-authors" type="text" maxlength="1000" placeholder="Author names" class="paper-field" />
+            </label>
+            <label class="block">
+              <span class="paper-field-label">Journal or venue</span>
+              <input id="pt-venue" type="text" maxlength="500" class="paper-field" />
+            </label>
+            <label class="block">
+              <span class="paper-field-label">Publication date</span>
+              <input id="pt-publicationDate" type="text" maxlength="80" placeholder="2024 or 2024-05-10" class="paper-field" />
+            </label>
+            <label class="block">
+              <span class="paper-field-label">Date read *</span>
+              <input id="pt-readDate" type="date" required class="paper-field" />
+            </label>
+          </div>
+          <label class="block">
+            <span class="paper-field-label">Paper link</span>
+            <input id="pt-url" type="url" maxlength="2000" placeholder="https://…" class="paper-field" />
+          </label>
+          <label class="block">
+            <span class="paper-field-label">Notes</span>
+            <textarea id="pt-notes" maxlength="8000" rows="5" placeholder="Key result, methods, questions, follow-up…" class="paper-field resize-y"></textarea>
+          </label>
+          <div class="flex items-center justify-between gap-3">
+            <div id="pt-formMsg" class="min-h-[1.25rem] text-sm text-gray-500" aria-live="polite"></div>
+            <button id="pt-savePaper" type="submit" class="rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-600">Save paper</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="flex flex-col items-center rounded-2xl bg-white p-6 shadow-lg">
+        <h3 class="text-lg font-semibold text-gray-800">Reading Calendar</h3>
+        <div class="my-4 flex items-center gap-3">
+          <button id="pt-prevMonth" type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">‹</button>
+          <span id="pt-monthLabel" class="min-w-[120px] text-center text-base font-semibold text-gray-800"></span>
+          <button id="pt-nextMonth" type="button" class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">›</button>
+        </div>
+        <div class="mb-1 grid w-[248px] grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase text-gray-400">
+          <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+        </div>
+        <div id="pt-calendar" class="grid grid-cols-7 gap-1"></div>
+        <button id="pt-clearDateFilter" type="button" class="invisible mt-4 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100">Show all papers</button>
+        <p class="mt-2 text-center text-xs text-gray-500">Select a highlighted day to filter the archive.</p>
+      </div>
+    </div>
+
+    <div class="mt-6 rounded-2xl bg-white p-6 shadow-lg">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-800">Paper Archive</h3>
+          <div id="pt-archiveLabel" class="mt-1 text-sm text-gray-500">All papers</div>
+        </div>
+        <input id="pt-search" type="search" placeholder="Search titles, authors, venues, or notes" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm sm:w-80" />
+      </div>
+      <div id="pt-archive" class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2"></div>
+      <div id="pt-empty" class="hidden py-10 text-center text-sm text-gray-500">No papers logged yet.</div>
     </div>
   </section>
 
@@ -469,8 +582,8 @@
     </div>
   </div>
 
-  <div id="wt-editModal" class="fixed inset-0 z-30 hidden items-center justify-center bg-slate-900/45 px-4">
-    <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+  <div id="wt-editModal" class="fixed inset-0 z-30 hidden items-center justify-center bg-slate-900/45 px-4 py-6">
+    <div class="max-h-full w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
       <div class="flex items-start justify-between gap-4">
         <div>
           <div class="text-[11px] uppercase tracking-[0.18em] text-gray-400">Edit Writing Day</div>
@@ -479,7 +592,7 @@
         <button id="wt-editCloseBtn" type="button" class="rounded-full bg-gray-100 px-2.5 py-1 text-sm text-gray-500 hover:bg-gray-200">x</button>
       </div>
 
-      <p class="mt-3 text-sm text-gray-600">Set the total writing time for this day.</p>
+      <p class="mt-3 text-sm text-gray-600">Review the daily total and the individual sessions saved that day.</p>
       <div id="wt-editCurrentValue" class="mt-2 text-xs text-gray-500"></div>
 
       <form id="wt-editForm" class="mt-4 space-y-4">
@@ -492,6 +605,19 @@
             <span class="mb-1 block text-sm font-medium text-gray-700">Minutes</span>
             <input id="wt-editMinutes" type="number" min="0" max="59" inputmode="numeric" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </label>
+        </div>
+
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-gray-700">Day notes</span>
+          <textarea id="wt-editNote" maxlength="4000" rows="3" placeholder="Summary, progress, or next steps…" class="w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </label>
+
+        <div>
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <span class="text-sm font-medium text-gray-700">Recorded sessions</span>
+            <span class="text-xs text-gray-400">Minutes and work item</span>
+          </div>
+          <div id="wt-editSessions" class="space-y-2"></div>
         </div>
 
         <div id="wt-editMsg" class="min-h-[1.25rem] text-sm text-red-600"></div>
@@ -516,6 +642,7 @@
   <script src="js/main.js" defer></script>
   <script src="js/weather.js" defer></script>
   <script src="js/writing-tracker.js" defer></script>
+  <script src="js/paper-tracker.js" defer></script>
   <script src="js/habit-tracker.js" defer></script>
   <script src="js/todo-list.js" defer></script>
   <script src="js/analytics.js" defer></script>

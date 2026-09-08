@@ -1,7 +1,7 @@
 # Personal Writing Tracker Homepage
 
-A configurable, no-build dashboard for bookmarks, writing progress, habits,
-a to-do list, weather, quotes, and a personal countdown/count-up timer.
+A configurable, no-build dashboard for writing sessions and goals, papers read,
+bookmarks, habits, a to-do list, weather, quotes, and a personal countdown/count-up timer.
 
 Try the shared version at
 [bradymoon.com/writing-tracker-homepage](https://bradymoon.com/writing-tracker-homepage/).
@@ -114,7 +114,8 @@ changing browsers or profiles, switching between the hosted and `file://`
 versions, or some cleanup tools can remove it.
 
 The **Export** control downloads one versioned JSON backup containing writing
-history, habit data, to-do items and their notes, bookmark counters, and browser
+history and session notes, writing-goal settings, the paper archive and notes,
+habit data, to-do items and their notes, bookmark counters, and browser
 customization. **Import** restores those areas after asking for confirmation.
 Older writing-only exports remain supported and replace only writing history.
 
@@ -138,9 +139,9 @@ the backup/sync pill for request instructions.
 An access request does not create an account. The owner reviews it and creates
 a confirmed Supabase Auth user manually. 
 
-When signed in, writing history, habit state, to-do items, bookmark counters,
-and browser customization are stored in the account's protected `user_state`
-row. Signing
+When signed in, writing history and goals, the paper archive, habit state,
+to-do items, bookmark counters, and browser customization are stored in the
+account's protected `user_state` row. Signing
 out clears that account's synced state from the current browser and returns the
 page to its public defaults.
 
@@ -158,6 +159,9 @@ page to its public defaults.
 - The page loads fonts, JavaScript libraries, bookmark icons, and weather data
   from third parties. Those services receive ordinary request information such
   as an IP address.
+- Selecting **Fill from DOI** sends only the DOI entered in that field to
+  Crossref to retrieve public citation metadata. Manual paper entry makes no
+  Crossref request.
 - The shared site redirects HTTP to HTTPS through Cloudflare. A self-hosted fork
   should also enforce HTTPS before enabling password sign-in.
 
@@ -173,6 +177,7 @@ addresses, URLs, coordinates, credentials, and identifiers.
 ├── js/
 │   ├── app-config.js          # Durable site defaults and owner settings
 │   ├── customization.js       # Browser customization and preference sync
+│   ├── paper-tracker.js       # Paper logging, DOI lookup, calendar, archive
 │   └── ...                    # Widgets, storage, and page behavior
 ├── supabase/user_state.sql    # Optional cloud-sync schema and RLS
 ├── CUSTOMIZATION.md           # Browser and file configuration reference

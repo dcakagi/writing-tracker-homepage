@@ -55,7 +55,10 @@ let wtManualMinutes, wtAddMinutesBtn;
 let wtExportBtn, wtImportInput, wtImportMsg;
 let wtEditModal, wtEditForm, wtEditDateLabel, wtEditCurrentValue, wtEditHours, wtEditMinutes, wtEditMsg;
 let wtEditCloseBtn, wtEditCancelBtn, wtEditDeleteBtn;
+let wtSessionNote, wtEditNote, wtEditSessions;
+let wtGoalMinutes, wtGoalSaveBtn, wtHolidayDate, wtHolidayAddBtn, wtHolidayList, wtGoalMsg;
 let wtEditingDate = null;
+let wtEditingDisplayedSeconds = 0;
 
 const wtCumulativeHoverGuidePlugin = {
   id: 'wtCumulativeHoverGuide',
@@ -172,6 +175,32 @@ function wtRenderAll() {
   wtRenderMostProductiveWeekday();
 }
 
+function wtGetWritingSettings() {
+  const homepageState = window.HomepageState;
+  const state = homepageState && typeof homepageState.loadUserState === 'function'
+    ? homepageState.loadUserState()
+    : { preferences: {} };
+  const raw = state.preferences && state.preferences.writingTracker;
+  const minutes = Number(raw && raw.dailyGoalMinutes);
+  return {
+    dailyGoalMinutes: Number.isInteger(minutes) && minutes > 0 && minutes <= 1440 ? minutes : 30,
+    holidays: Array.isArray(raw && raw.holidays)
+      ? [...new Set(raw.holidays.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)))].sort()
+      : []
+  };
+}
+
+async function wtSaveWritingSettings(nextSettings) {
+  const homepageState = window.HomepageState;
+  if (!homepageState || typeof homepageState.saveUserStatePatch !== 'function') return;
+  const state = homepageState.loadUserState();
+  const preferences = state.preferences && typeof state.preferences === 'object'
+    ? JSON.parse(JSON.stringify(state.preferences))
+    : {};
+  preferences.writingTracker = nextSettings;
+  await homepageState.saveUserStatePatch({ preferences });
+}
+
 function wtSetDayTime(dateStr, totalSeconds) {
   const nextSeconds = Math.max(0, Math.round(totalSeconds || 0));
 
@@ -184,6 +213,25 @@ function wtSetDayTime(dateStr, totalSeconds) {
     delete wtData[dateStr];
   }
 
+  wtSaveData(wtData);
+}
+
+function wtAddSession(dateStr, seconds, note) {
+  const duration = Math.max(0, Math.round(seconds || 0));
+  if (!duration) return;
+  const current = wtData[dateStr] || { time: 0 };
+  const sessions = Array.isArray(current.sessions) ? current.sessions.slice() : [];
+  sessions.push({
+    id: `writing-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    seconds: duration,
+    note: String(note || '').trim().slice(0, 4000),
+    savedAt: new Date().toISOString()
+  });
+  wtData[dateStr] = {
+    ...current,
+    time: Math.max(0, Math.round(current.time || 0)) + duration,
+    sessions
+  };
   wtSaveData(wtData);
 }
 
@@ -251,12 +299,17 @@ function wtResetExportReminder() {
 function wtLoadActiveTimer() {
   const activeTimer = localStorage.getItem(WT_CONFIG.activeTimerKey);
   if (activeTimer) {
-    const timerData = JSON.parse(activeTimer);
-    wtStartTime = new Date(timerData.startTime);
-    wtAccumulatedTime = timerData.accumulated || 0;
+    try {
+      const timerData = JSON.parse(activeTimer);
+      wtStartTime = new Date(timerData.startTime);
+      wtAccumulatedTime = timerData.accumulated || 0;
+      if (wtSessionNote && typeof timerData.note === 'string') wtSessionNote.value = timerData.note;
 
-  wtTimerInterval = setInterval(wtUpdateTimerDisplay, 1000);
-    wtSetTimerRunningState();
+      wtTimerInterval = setInterval(wtUpdateTimerDisplay, 1000);
+      wtSetTimerRunningState();
+    } catch (error) {
+      localStorage.removeItem(WT_CONFIG.activeTimerKey);
+    }
   }
 }
 
@@ -264,7 +317,8 @@ function wtSaveActiveTimer() {
   if (wtStartTime) {
     localStorage.setItem(WT_CONFIG.activeTimerKey, JSON.stringify({
       startTime: wtStartTime.toISOString(),
-      accumulated: wtAccumulatedTime
+      accumulated: wtAccumulatedTime,
+      note: wtSessionNote ? wtSessionNote.value.slice(0, 4000) : ''
     }));
   } else {
     localStorage.removeItem(WT_CONFIG.activeTimerKey);
@@ -305,8 +359,8 @@ function wtSetTimerStoppedState() {
 function wtSaveSession() {
   if (wtAccumulatedTime > 0) {
     const today = wtGetTodayKey();
-    const updatedTime = (wtData[today]?.time || 0) + wtAccumulatedTime;
-    wtSetDayTime(today, updatedTime);
+    const sessionNote = wtSessionNote ? wtSessionNote.value : '';
+    wtAddSession(today, wtAccumulatedTime, sessionNote);
     wtRenderAll();
 
     const minutes = Math.floor(wtAccumulatedTime / 60);
@@ -319,6 +373,7 @@ function wtSaveSession() {
     }, 3000);
 
     wtAccumulatedTime = 0;
+    if (wtSessionNote) wtSessionNote.value = '';
     wtUpdateTimerDisplay();
   }
 }
@@ -332,12 +387,15 @@ function wtOpenEditModal(dateStr) {
   const currentSeconds = wtData[dateStr]?.time || 0;
   const totalMinutes = Math.round(currentSeconds / 60);
   wtEditingDate = dateStr;
+  wtEditingDisplayedSeconds = totalMinutes * 60;
   wtEditDateLabel.textContent = wtFormatDateLabel(dateStr);
   wtEditCurrentValue.textContent = currentSeconds > 0
     ? `Currently saved: ${wtFormatDuration(currentSeconds)}`
     : 'No writing time saved for this day yet.';
   wtEditHours.value = String(Math.floor(totalMinutes / 60));
   wtEditMinutes.value = String(totalMinutes % 60);
+  if (wtEditNote) wtEditNote.value = wtData[dateStr]?.note || '';
+  wtRenderEditSessions(dateStr);
   wtEditMsg.textContent = '';
   wtEditModal.classList.remove('hidden');
   wtEditModal.classList.add('flex');
@@ -348,10 +406,60 @@ function wtOpenEditModal(dateStr) {
   });
 }
 
+function wtRenderEditSessions(dateStr) {
+  if (!wtEditSessions) return;
+  wtEditSessions.replaceChildren();
+  const sessions = Array.isArray(wtData[dateStr]?.sessions) ? wtData[dateStr].sessions : [];
+  if (!sessions.length) {
+    const empty = document.createElement('p');
+    empty.className = 'rounded-lg bg-gray-50 px-3 py-3 text-xs text-gray-500';
+    empty.textContent = 'No individual sessions were recorded. Older totals can still be edited above.';
+    wtEditSessions.appendChild(empty);
+    return;
+  }
+
+  sessions.forEach((session) => {
+    const row = document.createElement('div');
+    row.className = 'wt-edit-session grid grid-cols-[5.5rem_1fr_auto] gap-2 rounded-lg border border-gray-200 bg-gray-50 p-2';
+    row.dataset.sessionId = session.id;
+    const displayedMinutes = ((session.seconds || 0) / 60).toFixed(1).replace(/\.0$/, '');
+    row.dataset.originalSeconds = String(session.seconds || 0);
+    row.dataset.originalMinutes = displayedMinutes;
+
+    const minutes = document.createElement('input');
+    minutes.type = 'number';
+    minutes.min = '0.1';
+    minutes.max = '1440';
+    minutes.step = '0.1';
+    minutes.value = displayedMinutes;
+    minutes.setAttribute('aria-label', 'Session duration in minutes');
+    minutes.className = 'wt-edit-session-minutes rounded-md border border-gray-300 px-2 py-2 text-sm';
+
+    const note = document.createElement('input');
+    note.type = 'text';
+    note.maxLength = 4000;
+    note.value = session.note || '';
+    note.placeholder = 'What was worked on?';
+    note.setAttribute('aria-label', 'Session work description');
+    note.className = 'wt-edit-session-note min-w-0 rounded-md border border-gray-300 px-2 py-2 text-sm';
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'rounded-md px-2 text-lg text-gray-400 hover:bg-red-50 hover:text-red-600';
+    remove.setAttribute('aria-label', 'Remove this session');
+    remove.textContent = '×';
+    remove.addEventListener('click', () => row.remove());
+
+    row.append(minutes, note, remove);
+    wtEditSessions.appendChild(row);
+  });
+}
+
 function wtCloseEditModal() {
   if (!wtEditModal) return;
 
   wtEditingDate = null;
+  wtEditingDisplayedSeconds = 0;
   wtEditMsg.textContent = '';
   wtEditForm.reset();
   wtEditModal.classList.add('hidden');
@@ -375,10 +483,43 @@ function wtSaveEditedDay(event) {
     return;
   }
 
-  const totalSeconds = ((hours * 60) + minutes) * 60;
+  const requestedTotalSeconds = ((hours * 60) + minutes) * 60;
   const editedDate = wtEditingDate;
+  const sessions = wtEditSessions
+    ? Array.from(wtEditSessions.querySelectorAll('.wt-edit-session')).reduce((items, row) => {
+        const sessionMinutes = Number(row.querySelector('.wt-edit-session-minutes')?.value);
+        if (!Number.isFinite(sessionMinutes) || sessionMinutes <= 0) return items;
+        const seconds = row.querySelector('.wt-edit-session-minutes')?.value === row.dataset.originalMinutes
+          ? Number(row.dataset.originalSeconds)
+          : Math.round(sessionMinutes * 60);
+        items.push({
+          id: row.dataset.sessionId || `writing-${Date.now()}-${items.length}`,
+          seconds,
+          note: (row.querySelector('.wt-edit-session-note')?.value || '').trim().slice(0, 4000),
+          savedAt: wtData[editedDate]?.sessions?.find((item) => item.id === row.dataset.sessionId)?.savedAt || ''
+        });
+        return items;
+      }, [])
+    : [];
+  const note = wtEditNote ? wtEditNote.value.trim().slice(0, 4000) : '';
+  const oldSessions = Array.isArray(wtData[editedDate]?.sessions) ? wtData[editedDate].sessions : [];
+  const oldSessionSeconds = oldSessions.reduce((total, session) => total + (session.seconds || 0), 0);
+  const newSessionSeconds = sessions.reduce((total, session) => total + session.seconds, 0);
+  const originalTotalSeconds = wtData[editedDate]?.time || 0;
+  const totalSeconds = requestedTotalSeconds === wtEditingDisplayedSeconds
+    ? Math.max(0, originalTotalSeconds + newSessionSeconds - oldSessionSeconds)
+    : requestedTotalSeconds;
 
-  wtSetDayTime(editedDate, totalSeconds);
+  if (totalSeconds > 0 || note || sessions.length) {
+    wtData[editedDate] = {
+      time: totalSeconds,
+      ...(note ? { note } : {}),
+      ...(sessions.length ? { sessions } : {})
+    };
+  } else {
+    delete wtData[editedDate];
+  }
+  wtSaveData(wtData);
   wtRenderAll();
   wtCloseEditModal();
 
@@ -415,13 +556,15 @@ function wtRenderCalendar() {
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   document.getElementById('wt-monthLabel').textContent = `${monthNames[month]} ${year}`;
 
-  // Calculate streaks (across all data)
+  // Calculate goal progress across all saved writing days.
+  const settings = wtGetWritingSettings();
   const currentStreak = wtCalculateCurrentStreakGlobal();
   const maxStreak = wtCalculateMaxStreakGlobal();
-  document.getElementById('wt-streak').textContent = `Current streak: ${currentStreak} day${currentStreak === 1 ? '' : 's'} | Max streak: ${maxStreak} day${maxStreak === 1 ? '' : 's'}`;
-  // render streak widgets (only current and max)
+  const goalDays = Object.keys(wtData).filter((dateStr) => wtIsGoalMet(dateStr, settings)).length;
+  document.getElementById('wt-streak').textContent = `${settings.dailyGoalMinutes}-minute goal · ${currentStreak}-day streak · best ${maxStreak}`;
   wtRenderCurrentStreakWidget(currentStreak, maxStreak);
-  wtRenderMaxStreakWidget(maxStreak);
+  wtRenderMaxStreakWidget(goalDays);
+  wtRenderGoalSettings(settings);
 
   // Find max time for color scaling
   const maxTime = wtGetMaxTimeForMonth(year, month, daysInMonth);
@@ -430,60 +573,58 @@ function wtRenderCalendar() {
   wtRenderCalendarDays(calendar, year, month, firstDay, daysInMonth, maxTime);
 }
 
-// Returns the current streak ending today (skipping weekends)
-// Returns the current streak ending today, across all months (skipping weekends)
+function wtDateKey(date) {
+  return `${date.getFullYear()}-${('0'+(date.getMonth()+1)).slice(-2)}-${('0'+date.getDate()).slice(-2)}`;
+}
+
+function wtIsGoalEligible(date, dateStr, settings) {
+  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+  return !isWeekend && !settings.holidays.includes(dateStr);
+}
+
+function wtIsGoalMet(dateStr, settings = wtGetWritingSettings()) {
+  return (wtData[dateStr]?.time || 0) >= settings.dailyGoalMinutes * 60;
+}
+
+// Current goal streak; today does not break the streak until the day is over.
 function wtCalculateCurrentStreakGlobal() {
-  // Find the earliest and latest date in wtData
-  const allDays = Object.keys(wtData).sort();
+  const allDays = Object.keys(wtData).filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
   if (allDays.length === 0) return 0;
+  const settings = wtGetWritingSettings();
   let streak = 0;
-  // Start from today, but if today is unwritten, start from yesterday, etc.
   let d = new Date();
-  let foundFirstWritten = false;
-  while (!foundFirstWritten) {
-    const dateStr = `${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}`;
-    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-    if (!isWeekend) {
-      if (wtData[dateStr] && wtData[dateStr].time > 0) {
-        foundFirstWritten = true;
-        break;
-      }
-    }
-    // If we've reached the earliest day, stop
-    if (dateStr <= allDays[0]) return 0;
+  const today = wtDateKey(d);
+  if (wtIsGoalEligible(d, today, settings) && !wtIsGoalMet(today, settings)) {
     d.setDate(d.getDate() - 1);
   }
-  // Now count streak backward from first written day
-  for (; ;) {
-    const dateStr = `${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}`;
-    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-    if (!isWeekend) {
-      if (wtData[dateStr] && wtData[dateStr].time > 0) {
-        streak++;
-      } else {
-        break;
-      }
+
+  while (wtDateKey(d) >= allDays[0]) {
+    const dateStr = wtDateKey(d);
+    if (wtIsGoalEligible(d, dateStr, settings)) {
+      if (!wtIsGoalMet(dateStr, settings)) break;
+      streak++;
     }
-    if (dateStr <= allDays[0]) break;
     d.setDate(d.getDate() - 1);
   }
   return streak;
 }
 
-// Returns the max streak across all months (skipping weekends)
+// Longest goal streak across eligible weekdays, excluding saved holidays.
 function wtCalculateMaxStreakGlobal() {
-  const allDays = Object.keys(wtData).sort();
+  const allDays = Object.keys(wtData).filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
   if (allDays.length === 0) return 0;
-  // Iterate day-by-day using local date construction to avoid timezone/daylight issues.
+  const settings = wtGetWritingSettings();
   const startParts = allDays[0].split('-').map(Number);
-  const endParts = allDays[allDays.length - 1].split('-').map(Number);
+  const today = new Date();
+  const lastParts = allDays[allDays.length - 1].split('-').map(Number);
+  const lastSaved = new Date(lastParts[0], lastParts[1] - 1, lastParts[2]);
+  const end = lastSaved < today ? lastSaved : today;
   let y = startParts[0], m = startParts[1] - 1, day = startParts[2];
-  const endY = endParts[0], endM = endParts[1] - 1, endDay = endParts[2];
+  const endY = end.getFullYear(), endM = end.getMonth(), endDay = end.getDate();
 
   let maxStreak = 0;
   let currentStreak = 0;
 
-  // Helper to compare local dates
   function isBeforeOrEqual(aY, aM, aD, bY, bM, bD) {
     if (aY !== bY) return aY < bY;
     if (aM !== bM) return aM < bM;
@@ -493,9 +634,8 @@ function wtCalculateMaxStreakGlobal() {
   while (isBeforeOrEqual(y, m, day, endY, endM, endDay)) {
     const dateStr = `${y}-${('0'+(m+1)).slice(-2)}-${('0'+day).slice(-2)}`;
     const dt = new Date(y, m, day);
-    const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
-    if (!isWeekend) {
-      if (wtData[dateStr] && wtData[dateStr].time > 0) {
+    if (wtIsGoalEligible(dt, dateStr, settings)) {
+      if (wtIsGoalMet(dateStr, settings)) {
         currentStreak++;
       } else {
         if (currentStreak > maxStreak) maxStreak = currentStreak;
@@ -503,7 +643,6 @@ function wtCalculateMaxStreakGlobal() {
       }
     }
 
-    // increment local date
     const next = new Date(y, m, day + 1);
     y = next.getFullYear();
     m = next.getMonth();
@@ -527,6 +666,7 @@ function wtGetMaxTimeForMonth(year, month, daysInMonth) {
 
 function wtRenderCalendarDays(calendar, year, month, firstDay, daysInMonth, maxTime) {
   const today = wtGetTodayKey();
+  const settings = wtGetWritingSettings();
 
   // Add empty cells for days before the first day of the month
   for (let i = 0; i < firstDay; i++) {
@@ -540,9 +680,13 @@ function wtRenderCalendarDays(calendar, year, month, firstDay, daysInMonth, maxT
     day.className = 'flex items-center justify-center w-8 h-8 rounded text-gray-700 text-sm cursor-pointer wt-calendar-day';
 
     const dateStr = `${year}-${('0'+(month+1)).slice(-2)}-${('0'+d).slice(-2)}`;
-    day.textContent = d;
+    const dayNumber = document.createElement('span');
+    dayNumber.textContent = d;
+    day.appendChild(dayNumber);
 
     const time = wtData[dateStr]?.time || 0;
+    const sessions = Array.isArray(wtData[dateStr]?.sessions) ? wtData[dateStr].sessions : [];
+    const hasWorkDetails = Boolean(wtData[dateStr]?.note || sessions.some((session) => session.note));
     if (time > 0) {
       const ratio = maxTime ? time / maxTime : 0;
       const r = Math.round(207 + (37-207)*ratio);
@@ -557,9 +701,17 @@ function wtRenderCalendarDays(calendar, year, month, firstDay, daysInMonth, maxT
     if (dateStr === today) {
       day.classList.add('ring-2', 'ring-blue-300', 'ring-offset-1');
     }
+    if (wtIsGoalMet(dateStr, settings)) day.classList.add('wt-goal-met');
+    if (hasWorkDetails) {
+      const marker = document.createElement('span');
+      marker.className = 'wt-calendar-note-marker';
+      marker.setAttribute('aria-hidden', 'true');
+      day.appendChild(marker);
+    }
 
-    day.title = `${dateStr}\nTime: ${wtFormatDuration(time)}`;
-    day.setAttribute('aria-label', `Edit writing time for ${wtFormatDateLabel(dateStr)}. Current total ${wtFormatDuration(time)}.`);
+    const detailText = sessions.length ? `\n${sessions.length} recorded session${sessions.length === 1 ? '' : 's'}` : '';
+    day.title = `${dateStr}\nTime: ${wtFormatDuration(time)}${detailText}`;
+    day.setAttribute('aria-label', `Edit writing details for ${wtFormatDateLabel(dateStr)}. Current total ${wtFormatDuration(time)}.`);
     day.addEventListener('click', () => wtOpenEditModal(dateStr));
     calendar.appendChild(day);
   }
@@ -1008,11 +1160,43 @@ function wtRenderCurrentStreakWidget(currentStreak, maxStreak) {
   container.setAttribute('title', `Current streak: ${currentStreak} / ${target} days`);
 }
 
-function wtRenderMaxStreakWidget(maxStreak) {
+function wtRenderMaxStreakWidget(goalDays) {
   const container = document.getElementById('wt-maxStreakWidget');
   if (!container) return;
-  container.textContent = `${maxStreak}`;
-  container.setAttribute('title', `Longest streak: ${maxStreak} days`);
+  container.textContent = `${goalDays}`;
+  container.setAttribute('title', `Daily writing goal met on ${goalDays} days`);
+}
+
+function wtRenderGoalSettings(settings = wtGetWritingSettings()) {
+  if (wtGoalMinutes && document.activeElement !== wtGoalMinutes) {
+    wtGoalMinutes.value = String(settings.dailyGoalMinutes);
+  }
+  if (!wtHolidayList) return;
+  wtHolidayList.replaceChildren();
+  settings.holidays.forEach((dateStr) => {
+    const chip = document.createElement('span');
+    chip.className = 'inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600';
+    const label = document.createElement('span');
+    label.textContent = wtFormatDateLabel(dateStr);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'text-gray-400 hover:text-red-600';
+    remove.textContent = '×';
+    remove.setAttribute('aria-label', `Remove ${wtFormatDateLabel(dateStr)} from excluded holidays`);
+    remove.addEventListener('click', async () => {
+      const next = { ...settings, holidays: settings.holidays.filter((date) => date !== dateStr) };
+      await wtSaveWritingSettings(next);
+      wtRenderAll();
+    });
+    chip.append(label, remove);
+    wtHolidayList.appendChild(chip);
+  });
+  if (!settings.holidays.length) {
+    const empty = document.createElement('span');
+    empty.className = 'text-xs text-gray-400';
+    empty.textContent = 'No holidays excluded';
+    wtHolidayList.appendChild(empty);
+  }
 }
 
 // Stats widget removed per request.
@@ -1117,6 +1301,7 @@ function wtExportData() {
     ? homepageState.loadUserState()
     : {
         writing_data: wtData,
+        paper_data: {},
         habit_data: {},
         todo_data: {},
         bookmark_counts: {},
@@ -1160,7 +1345,7 @@ async function wtImportFullBackup(backup) {
   }
 
   const shouldImport = window.confirm(
-    'Import this homepage backup?\n\nThis replaces writing history, habit data, to-do items, bookmark counts, and browser customization.' +
+    'Import this homepage backup?\n\nThis replaces writing history, papers, habit data, to-do items, bookmark counts, goals, and browser customization.' +
     (homepageState.isRemoteSyncActive() ? '\n\nBecause you are signed in, the imported copy will also replace your synced data.' : '')
   );
   if (!shouldImport) return false;
@@ -1171,10 +1356,23 @@ async function wtImportFullBackup(backup) {
   const importedCustomization = customizationApi && typeof customizationApi.setImported === 'function'
     ? customizationApi.setImported(rawPreferences.customization)
     : null;
-  const preferences = importedCustomization ? { customization: importedCustomization } : {};
+  const preferences = {};
+  if (wtIsPlainObject(rawPreferences.writingTracker)) {
+    const goalMinutes = Number(rawPreferences.writingTracker.dailyGoalMinutes);
+    const holidays = Array.isArray(rawPreferences.writingTracker.holidays)
+      ? [...new Set(rawPreferences.writingTracker.holidays.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)))].slice(0, 3660)
+      : [];
+    preferences.writingTracker = {
+      dailyGoalMinutes: Number.isInteger(goalMinutes) && goalMinutes >= 1 && goalMinutes <= 1440 ? goalMinutes : 30,
+      holidays
+    };
+  }
+  if (importedCustomization) preferences.customization = importedCustomization;
+  else delete preferences.customization;
 
   await homepageState.saveUserStatePatch({
     writing_data: wtIsPlainObject(rawState.writing_data) ? rawState.writing_data : {},
+    paper_data: wtIsPlainObject(rawState.paper_data) ? rawState.paper_data : {},
     habit_data: wtIsPlainObject(rawState.habit_data) ? rawState.habit_data : {},
     todo_data: wtIsPlainObject(rawState.todo_data) ? rawState.todo_data : {},
     bookmark_counts: wtIsPlainObject(rawState.bookmark_counts) ? rawState.bookmark_counts : {},
@@ -1201,7 +1399,7 @@ async function wtImportFullBackup(backup) {
 
 async function wtImportLegacyWritingBackup(imported) {
   const shouldImport = window.confirm(
-    'Import this older writing-only backup?\n\nThis replaces writing history but keeps habit data, to-do items, bookmarks, and customization.'
+    'Import this older writing-only backup?\n\nThis replaces writing history but keeps papers, goals, habit data, to-do items, bookmarks, and customization.'
   );
   if (!shouldImport) return false;
 
@@ -1264,6 +1462,12 @@ function wtSetupEventHandlers() {
     }
   };
 
+  if (wtSessionNote) {
+    wtSessionNote.addEventListener('input', () => {
+      if (wtStartTime) wtSaveActiveTimer();
+    });
+  }
+
   wtStopBtn.onclick = () => {
     if (wtStartTime) {
       const finalTime = wtGetCurrentTime();
@@ -1282,8 +1486,8 @@ function wtSetupEventHandlers() {
     const min = parseInt(wtManualMinutes.value, 10);
     if (!isNaN(min) && min > 0) {
       const today = wtGetTodayKey();
-      const updatedTime = (wtData[today]?.time || 0) + (min * 60);
-      wtSetDayTime(today, updatedTime);
+      const note = wtSessionNote ? wtSessionNote.value : '';
+      wtAddSession(today, min * 60, note);
       wtRenderAll();
       wtShowSessionMessage(`Added ${min} minute${min === 1 ? '' : 's'}!`);
       setTimeout(() => {
@@ -1292,8 +1496,43 @@ function wtSetupEventHandlers() {
         }
       }, 2000);
       wtManualMinutes.value = '';
+      if (wtSessionNote) wtSessionNote.value = '';
     }
   };
+
+  if (wtGoalSaveBtn) {
+    wtGoalSaveBtn.onclick = async () => {
+      const minutes = Number(wtGoalMinutes.value);
+      if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+        wtGoalMsg.textContent = 'Choose a whole number from 1 to 1,440 minutes.';
+        wtGoalMsg.className = 'mt-2 min-h-[1rem] text-xs text-red-600';
+        return;
+      }
+      const settings = wtGetWritingSettings();
+      await wtSaveWritingSettings({ ...settings, dailyGoalMinutes: minutes });
+      wtGoalMsg.textContent = `Daily goal saved at ${minutes} minutes.`;
+      wtGoalMsg.className = 'mt-2 min-h-[1rem] text-xs text-green-600';
+      wtRenderAll();
+    };
+  }
+
+  if (wtHolidayAddBtn) {
+    wtHolidayAddBtn.onclick = async () => {
+      const dateStr = wtHolidayDate.value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        wtGoalMsg.textContent = 'Choose a holiday date first.';
+        wtGoalMsg.className = 'mt-2 min-h-[1rem] text-xs text-red-600';
+        return;
+      }
+      const settings = wtGetWritingSettings();
+      const holidays = [...new Set([...settings.holidays, dateStr])].sort();
+      await wtSaveWritingSettings({ ...settings, holidays });
+      wtHolidayDate.value = '';
+      wtGoalMsg.textContent = `${wtFormatDateLabel(dateStr)} will be skipped in streaks.`;
+      wtGoalMsg.className = 'mt-2 min-h-[1rem] text-xs text-green-600';
+      wtRenderAll();
+    };
+  }
 
   // Calendar navigation
   document.getElementById('wt-prevMonth').onclick = () => {
@@ -1379,6 +1618,15 @@ function initializeWritingTracker() {
   wtEditCloseBtn = document.getElementById('wt-editCloseBtn');
   wtEditCancelBtn = document.getElementById('wt-editCancelBtn');
   wtEditDeleteBtn = document.getElementById('wt-editDeleteBtn');
+  wtSessionNote = document.getElementById('wt-sessionNote');
+  wtEditNote = document.getElementById('wt-editNote');
+  wtEditSessions = document.getElementById('wt-editSessions');
+  wtGoalMinutes = document.getElementById('wt-goalMinutes');
+  wtGoalSaveBtn = document.getElementById('wt-goalSaveBtn');
+  wtHolidayDate = document.getElementById('wt-holidayDate');
+  wtHolidayAddBtn = document.getElementById('wt-holidayAddBtn');
+  wtHolidayList = document.getElementById('wt-holidayList');
+  wtGoalMsg = document.getElementById('wt-goalMsg');
   wtUpdateChartRangeButtons();
 
   // Load data and initialize

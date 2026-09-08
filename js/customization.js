@@ -7,6 +7,7 @@
 
   const SECTION_ITEMS = [
     { id: "writing", label: "Writing" },
+    { id: "reading", label: "Paper reading" },
     { id: "bookmarks", label: "Bookmarks" },
     { id: "dashboard", label: "Dashboard widgets" }
   ];
@@ -116,7 +117,7 @@
     const baseFeatures = isPlainObject(base.features) ? base.features : {};
 
     const features = {};
-    ["dashboard", "writing", "bookmarks", "timer", "weeklyWeather", "quote", "hourlyWeather", "habit", "todo"]
+    ["dashboard", "writing", "reading", "bookmarks", "timer", "weeklyWeather", "quote", "hourlyWeather", "habit", "todo"]
       .forEach((key) => {
         features[key] = typeof inputFeatures[key] === "boolean"
           ? inputFeatures[key]

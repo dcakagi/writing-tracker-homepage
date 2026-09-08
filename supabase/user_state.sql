@@ -4,6 +4,7 @@
 create table if not exists public.user_state (
   user_id uuid primary key references auth.users (id) on delete cascade,
   writing_data jsonb not null default '{}'::jsonb,
+  paper_data jsonb not null default '{}'::jsonb,
   habit_data jsonb not null default '{}'::jsonb,
   todo_data jsonb not null default '{}'::jsonb,
   bookmark_counts jsonb not null default '{}'::jsonb,
@@ -15,6 +16,7 @@ create table if not exists public.user_state (
 -- Bring an older copy of this schema forward without retaining email addresses.
 alter table public.user_state drop column if exists email;
 alter table public.user_state add column if not exists writing_data jsonb default '{}'::jsonb;
+alter table public.user_state add column if not exists paper_data jsonb default '{}'::jsonb;
 alter table public.user_state add column if not exists habit_data jsonb default '{}'::jsonb;
 alter table public.user_state add column if not exists todo_data jsonb default '{}'::jsonb;
 alter table public.user_state add column if not exists bookmark_counts jsonb default '{}'::jsonb;
@@ -25,6 +27,7 @@ alter table public.user_state add column if not exists updated_at timestamptz de
 update public.user_state
 set
   writing_data = coalesce(writing_data, '{}'::jsonb),
+  paper_data = coalesce(paper_data, '{}'::jsonb),
   habit_data = coalesce(habit_data, '{}'::jsonb),
   todo_data = coalesce(todo_data, '{}'::jsonb),
   bookmark_counts = coalesce(bookmark_counts, '{}'::jsonb),
@@ -33,6 +36,7 @@ set
   updated_at = coalesce(updated_at, now())
 where
   writing_data is null
+  or paper_data is null
   or habit_data is null
   or todo_data is null
   or bookmark_counts is null
@@ -42,6 +46,8 @@ where
 
 alter table public.user_state alter column writing_data set default '{}'::jsonb;
 alter table public.user_state alter column writing_data set not null;
+alter table public.user_state alter column paper_data set default '{}'::jsonb;
+alter table public.user_state alter column paper_data set not null;
 alter table public.user_state alter column habit_data set default '{}'::jsonb;
 alter table public.user_state alter column habit_data set not null;
 alter table public.user_state alter column todo_data set default '{}'::jsonb;
@@ -69,6 +75,13 @@ alter table public.user_state
   add constraint user_state_habit_data_valid check (
     jsonb_typeof(habit_data) = 'object'
     and octet_length(habit_data::text) <= 65536
+  );
+
+alter table public.user_state drop constraint if exists user_state_paper_data_valid;
+alter table public.user_state
+  add constraint user_state_paper_data_valid check (
+    jsonb_typeof(paper_data) = 'object'
+    and octet_length(paper_data::text) <= 4194304
   );
 
 alter table public.user_state drop constraint if exists user_state_todo_data_valid;

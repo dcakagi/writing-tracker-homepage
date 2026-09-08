@@ -97,7 +97,7 @@
     const sectionsRoot = document.getElementById("homepage-sections");
     reorderChildren(sectionsRoot, "data-section-id", config.sectionOrder);
 
-    ["dashboard", "writing", "bookmarks"].forEach((sectionId) => {
+    ["dashboard", "writing", "reading", "bookmarks"].forEach((sectionId) => {
       setElementEnabled(
         document.querySelector(`[data-section-id="${sectionId}"]`),
         getFeature(sectionId, true)
@@ -331,6 +331,9 @@
     }
     if (window.initializeWritingTracker) {
       await window.initializeWritingTracker();
+    }
+    if (getFeature("reading", true) && window.initializePaperTracker) {
+      window.initializePaperTracker();
     }
     if (dashboardEnabled && getFeature("habit", true) && window.initializeHabitTracker) {
       window.initializeHabitTracker();

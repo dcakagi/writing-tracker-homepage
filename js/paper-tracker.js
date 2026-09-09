@@ -43,6 +43,17 @@
     element.className = `min-h-[1.25rem] text-sm ${color}`;
   }
 
+  function safeHttpUrl(value) {
+    const candidate = String(value || '').trim();
+    if (!candidate) return '';
+    try {
+      const parsed = new URL(candidate);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : '';
+    } catch (error) {
+      return '';
+    }
+  }
+
   function cleanDoi(value) {
     return String(value || '')
       .trim()
@@ -119,7 +130,7 @@
       publicationDate: ui.publicationDate.value.trim(),
       venue: ui.venue.value.trim(),
       doi,
-      url: ui.url.value.trim() || (doi ? `https://doi.org/${doi}` : ''),
+      url: safeHttpUrl(ui.url.value) || (doi ? safeHttpUrl(`https://doi.org/${doi}`) : ''),
       readDate: ui.readDate.value,
       notes: ui.notes.value.trim(),
       createdAt: existing && existing.createdAt ? existing.createdAt : now,
@@ -136,6 +147,10 @@
       setMessage(ui.formMsg, 'A title and date read are required.', 'error');
       return;
     }
+    if (ui.url.value.trim() && !paper.url) {
+      setMessage(ui.formMsg, 'The paper link must be an http or https address.', 'error');
+      return;
+    }
 
     if (existing) {
       paperData.papers = paperData.papers.map((item) => item.id === existing.id ? paper : item);
@@ -143,6 +158,7 @@
       paperData.papers = [...paperData.papers, paper];
     }
     await saveData();
+    paperData = loadData();
     const message = existing ? 'Paper updated.' : 'Paper added to the archive.';
     resetForm();
     setMessage(ui.formMsg, message, 'success');
@@ -176,6 +192,7 @@
     paperData.papers = paperData.papers.filter((item) => item.id !== id);
     if (editingId === id) resetForm();
     await saveData();
+    paperData = loadData();
     renderAll();
   }
 
@@ -295,6 +312,10 @@
   }
 
   function renderAll() {
+    if (selectedDate && !paperData.papers.some((paper) => paper.readDate === selectedDate)) {
+      selectedDate = '';
+      ui.clearDateFilter.classList.add('invisible');
+    }
     renderWeekSummary();
     renderCalendar();
     renderArchive();
@@ -349,8 +370,9 @@
     });
     const stateApi = window.HomepageState;
     if (stateApi && stateApi.events) {
-      window.addEventListener(stateApi.events.stateChanged, () => {
+      window.addEventListener(stateApi.events.stateChanged, (event) => {
         if (!initialized) return;
+        if (event && event.detail && event.detail.source === 'local-save') return;
         paperData = loadData();
         renderAll();
       });

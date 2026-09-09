@@ -6,10 +6,12 @@
   const MAX_PREFERENCE_BYTES = 60000;
 
   const SECTION_ITEMS = [
-    { id: "writing", label: "Writing" },
-    { id: "reading", label: "Paper reading" },
-    { id: "bookmarks", label: "Bookmarks" },
-    { id: "dashboard", label: "Dashboard widgets" }
+    { id: "writing", label: "Writing", feature: "writing" },
+    { id: "reading", label: "Paper reading", feature: "reading" },
+    { id: "todo", label: "To-do list", feature: "todo" },
+    { id: "hackernews", label: "Hacker News", feature: "hackernews" },
+    { id: "bookmarks", label: "Bookmarks", feature: "bookmarks" },
+    { id: "dashboard", label: "Dashboard widgets", feature: "dashboard" }
   ];
 
   const WIDGET_ITEMS = [
@@ -17,9 +19,10 @@
     { id: "weekly-weather", label: "Weekly weather", feature: "weeklyWeather" },
     { id: "quote", label: "Quote", feature: "quote" },
     { id: "hourly-weather", label: "24-hour weather", feature: "hourlyWeather" },
-    { id: "habit", label: "Habit tracker", feature: "habit" },
-    { id: "todo", label: "To-do list", feature: "todo" }
+    { id: "habit", label: "Habit tracker", feature: "habit" }
   ];
+
+  const FEATURE_KEYS = SECTION_ITEMS.concat(WIDGET_ITEMS).map((item) => item.feature);
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -117,12 +120,11 @@
     const baseFeatures = isPlainObject(base.features) ? base.features : {};
 
     const features = {};
-    ["dashboard", "writing", "reading", "bookmarks", "timer", "weeklyWeather", "quote", "hourlyWeather", "habit", "todo"]
-      .forEach((key) => {
-        features[key] = typeof inputFeatures[key] === "boolean"
-          ? inputFeatures[key]
-          : baseFeatures[key] !== false;
-      });
+    FEATURE_KEYS.forEach((key) => {
+      features[key] = typeof inputFeatures[key] === "boolean"
+        ? inputFeatures[key]
+        : baseFeatures[key] !== false;
+    });
 
     const quotes = (Array.isArray(input.quotes) ? input.quotes : base.quotes || [])
       .slice(0, MAX_QUOTES)
@@ -323,18 +325,22 @@
     });
   }
 
+  function featureKeyMap(items) {
+    return Object.fromEntries(items.map((item) => [item.id, item.feature]));
+  }
+
   function renderAllOrderLists() {
     renderOrderList(
       "customize-section-order",
       SECTION_ITEMS,
       draft.sectionOrder,
-      { writing: "writing", bookmarks: "bookmarks", dashboard: "dashboard" }
+      featureKeyMap(SECTION_ITEMS)
     );
     renderOrderList(
       "customize-widget-order",
       WIDGET_ITEMS,
       draft.dashboardWidgetOrder,
-      Object.fromEntries(WIDGET_ITEMS.map((item) => [item.id, item.feature]))
+      featureKeyMap(WIDGET_ITEMS)
     );
   }
 

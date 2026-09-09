@@ -1,7 +1,8 @@
 # Personal Writing Tracker Homepage
 
 A configurable, no-build dashboard for writing sessions and goals, papers read,
-bookmarks, habits, a to-do list, weather, quotes, and a personal countdown/count-up timer.
+bookmarks, habits, a to-do list, the Hacker News top ten, weather, quotes, and a
+personal countdown/count-up timer.
 
 Try the shared version at
 [bradymoon.com/writing-tracker-homepage](https://bradymoon.com/writing-tracker-homepage/).
@@ -94,8 +95,9 @@ The **Customize** panel currently supports:
 - Homepage title and favicon
 - Countdown/count-up timer label and date
 - Dashboard-backup reminder interval
-- Main-section visibility and order
-- Dashboard-widget visibility and order, including the to-do list
+- Main-section visibility and order, including the paper tracker, the to-do
+  list, and the Hacker News feed
+- Dashboard-widget visibility and order
 - Weather location, coordinates, and units
 - Quotes
 - Bookmarks, their order, icons, stable IDs, and new-tab behavior
@@ -162,6 +164,8 @@ page to its public defaults.
 - Selecting **Fill from DOI** sends only the DOI entered in that field to
   Crossref to retrieve public citation metadata. Manual paper entry makes no
   Crossref request.
+- The Hacker News section reads the public Hacker News API and sends it no
+  homepage data. Set `features.hackernews` to `false` to stop those requests.
 - The shared site redirects HTTP to HTTPS through Cloudflare. A self-hosted fork
   should also enforce HTTPS before enabling password sign-in.
 
@@ -178,6 +182,8 @@ addresses, URLs, coordinates, credentials, and identifiers.
 │   ├── app-config.js          # Durable site defaults and owner settings
 │   ├── customization.js       # Browser customization and preference sync
 │   ├── paper-tracker.js       # Paper logging, DOI lookup, calendar, archive
+│   ├── todo-list.js           # To-do items, statuses, and notes
+│   ├── hacker-news.js         # Hacker News top-ten feed
 │   └── ...                    # Widgets, storage, and page behavior
 ├── supabase/user_state.sql    # Optional cloud-sync schema and RLS
 ├── CUSTOMIZATION.md           # Browser and file configuration reference

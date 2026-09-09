@@ -18,6 +18,7 @@ Select **Customize** in the page header. The panel can edit:
 
 - Site title and favicon
 - Section and dashboard-widget visibility and order, including the to-do list
+  and the Hacker News feed
 - Timer label and date
 - Dashboard-backup reminder interval
 - Weather location, coordinates, and units
@@ -57,7 +58,7 @@ window.APP_CONFIG = {
     favicon: "https://emojiapi.dev/api/v1/rocket/64.png",
   },
 
-  sectionOrder: ["writing", "reading", "bookmarks", "dashboard"],
+  sectionOrder: ["writing", "reading", "todo", "hackernews", "bookmarks", "dashboard"],
 
   dashboardWidgetOrder: [
     "timer",
@@ -65,20 +66,20 @@ window.APP_CONFIG = {
     "quote",
     "hourly-weather",
     "habit",
-    "todo",
   ],
 
   features: {
     dashboard: true,
     writing: true,
     reading: true,
+    todo: true,
+    hackernews: true,
     bookmarks: true,
     timer: true,
     weeklyWeather: true,
     quote: true,
     hourlyWeather: true,
     habit: true,
-    todo: true,
   },
 
   timer: {
@@ -149,12 +150,16 @@ string.
 `sectionOrder` controls the page's top-level groups:
 
 ```js
-sectionOrder: ["writing", "reading", "bookmarks", "dashboard"],
+sectionOrder: ["writing", "reading", "todo", "hackernews", "bookmarks", "dashboard"],
 ```
 
 Move an identifier earlier or later in the array to move that section. Keep
 each enabled section no more than once. To hide a section, set its matching
 option in `features` to `false` instead of deleting its configuration.
+
+The to-do list and the paper reading tracker are both top-level sections, so
+either can be moved without dragging the other, or the dashboard widgets,
+along with it.
 
 ## Reorder dashboard widgets
 
@@ -165,7 +170,6 @@ group:
 dashboardWidgetOrder: [
   "quote",
   "timer",
-  "todo",
   "habit",
   "weekly-weather",
   "hourly-weather",
@@ -184,22 +188,23 @@ features: {
   dashboard: true,
   writing: true,
   reading: true,
+  todo: true,
+  hackernews: true,
   bookmarks: true,
   timer: false,
   weeklyWeather: true,
   quote: true,
   hourlyWeather: false,
   habit: true,
-  todo: true,
 },
 ```
 
 Hiding a feature does not necessarily erase data that it previously saved in
 local storage. Cloud sync is controlled separately by `supabase.enabled`.
 
-## The to-do list widget
+## The to-do list section
 
-The to-do widget is a dashboard widget with the identifier `todo` and the
+The to-do list is a top-level section with the identifier `todo` and the
 feature flag `todo`. Its contents are personal data rather than configuration,
 so items are edited on the page instead of in `js/app-config.js`.
 
@@ -225,6 +230,22 @@ default, and in `user_state.todo_data` when you are signed in for cloud sync.
 An existing Supabase project needs `supabase/user_state.sql` reapplied to add
 the `todo_data` column. Until it is applied, the rest of your data keeps
 syncing and the sync panel explains that the to-do list is staying local.
+
+## The Hacker News section
+
+The Hacker News section is a top-level section with the identifier `hackernews`
+and the feature flag `hackernews`. It lists the current top ten stories from
+[news.ycombinator.com](https://news.ycombinator.com), each linking to the
+article, with a separate link to its Hacker News discussion.
+
+Stories come from the public Hacker News API at
+`https://hacker-news.firebaseio.com`. That service receives ordinary request
+information such as an IP address, and no homepage data is sent to it. The
+list is cached in this browser for ten minutes so a page reload does not
+refetch; **Refresh** always fetches a fresh list. If the API cannot be reached,
+the last cached list stays on screen with a note explaining why.
+
+Set `features.hackernews` to `false` to hide the section and stop the requests.
 
 ## Set the timer
 

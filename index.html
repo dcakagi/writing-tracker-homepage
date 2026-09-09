@@ -191,9 +191,13 @@
       </div>
     </div>
 
+  </div>
+  </section>
 
-    <!-- To-Do List -->
-    <div data-widget-id="todo" class="bg-white shadow-lg rounded-2xl p-6 col-span-1 md:col-span-2" id="todo-widget">
+
+  <!-- To-Do List Section -->
+  <section data-section-id="todo" class="w-full max-w-6xl mx-auto">
+    <div class="bg-white shadow-lg rounded-2xl p-6" id="todo-widget">
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div>
           <div class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Goals</div>
@@ -224,8 +228,6 @@
       <p id="todo-empty" class="hidden py-6 text-center text-sm text-gray-500"></p>
       <div id="todo-msg" class="mt-2 min-h-[1rem] text-xs text-amber-600" aria-live="polite"></div>
     </div>
-
-  </div>
   </section>
 
   <!-- Writing Tracker Section -->
@@ -432,6 +434,23 @@
       </div>
       <div id="pt-archive" class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2"></div>
       <div id="pt-empty" class="hidden py-10 text-center text-sm text-gray-500">No papers logged yet.</div>
+    </div>
+  </section>
+
+  <!-- Hacker News Section -->
+  <section data-section-id="hackernews" class="w-full max-w-6xl mx-auto">
+    <div class="rounded-2xl bg-white p-6 shadow-lg">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">Front page</div>
+          <h2 class="text-xl font-semibold text-gray-800">Hacker News Top 10</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="hn-status" class="text-sm text-gray-500" aria-live="polite">Loading stories...</span>
+          <button id="hn-refresh" type="button" class="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:cursor-wait disabled:opacity-60">Refresh</button>
+        </div>
+      </div>
+      <ol id="hn-list" class="mt-5 space-y-2"></ol>
     </div>
   </section>
 
@@ -645,6 +664,7 @@
   <script src="js/paper-tracker.js" defer></script>
   <script src="js/habit-tracker.js" defer></script>
   <script src="js/todo-list.js" defer></script>
+  <script src="js/hacker-news.js" defer></script>
   <script src="js/analytics.js" defer></script>
 </body>
 </html>

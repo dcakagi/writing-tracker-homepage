@@ -97,7 +97,7 @@
     const sectionsRoot = document.getElementById("homepage-sections");
     reorderChildren(sectionsRoot, "data-section-id", config.sectionOrder);
 
-    ["dashboard", "writing", "reading", "bookmarks"].forEach((sectionId) => {
+    ["dashboard", "writing", "reading", "todo", "hackernews", "bookmarks"].forEach((sectionId) => {
       setElementEnabled(
         document.querySelector(`[data-section-id="${sectionId}"]`),
         getFeature(sectionId, true)
@@ -110,8 +110,7 @@
       "weekly-weather": "weeklyWeather",
       quote: "quote",
       "hourly-weather": "hourlyWeather",
-      habit: "habit",
-      todo: "todo"
+      habit: "habit"
     };
     const dashboard = document.getElementById("dashboard-widgets");
     reorderChildren(dashboard, "data-widget-id", config.dashboardWidgetOrder);
@@ -338,8 +337,11 @@
     if (dashboardEnabled && getFeature("habit", true) && window.initializeHabitTracker) {
       window.initializeHabitTracker();
     }
-    if (dashboardEnabled && getFeature("todo", true) && window.initializeTodoList) {
+    if (getFeature("todo", true) && window.initializeTodoList) {
       window.initializeTodoList();
+    }
+    if (getFeature("hackernews", true) && window.initializeHackerNews) {
+      window.initializeHackerNews();
     }
   });
 

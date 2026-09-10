@@ -161,9 +161,10 @@ page to its public defaults.
 - The page loads fonts, JavaScript libraries, bookmark icons, and weather data
   from third parties. Those services receive ordinary request information such
   as an IP address.
-- Selecting **Fill from DOI** sends only the DOI entered in that field to
-  Crossref to retrieve public citation metadata. Manual paper entry makes no
-  Crossref request.
+- Selecting **Fill from DOI** sends only the identifier entered in that field to
+  Crossref and, for DOIs Crossref does not hold (arXiv preprints, Zenodo and
+  other DataCite registrations), to DataCite, to retrieve public citation
+  metadata. Manual paper entry makes no lookup request.
 - The Hacker News section reads the public Hacker News API and sends it no
   homepage data. Set `features.hackernews` to `false` to stop those requests.
 - The shared site redirects HTTP to HTTPS through Cloudflare. A self-hosted fork

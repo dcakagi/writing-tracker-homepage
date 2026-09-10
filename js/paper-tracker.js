@@ -54,12 +54,40 @@
     }
   }
 
+  const ARXIV_DOI_PREFIX = '10.48550/arXiv.';
+
+  // Accepts arxiv.org links, "arXiv:2401.01234" and bare new or old style ids.
+  function arxivId(value) {
+    const text = String(value || '').trim();
+    const patterns = [
+      /^(?:https?:\/\/)?(?:www\.)?arxiv\.org\/(?:abs|pdf)\/(.+?)(?:\.pdf)?$/i,
+      /^arxiv[:/]\s*(.+)$/i,
+      /^(\d{4}\.\d{4,5}(?:v\d+)?)$/,
+      /^([a-z-]+(?:\.[A-Z]{2})?\/\d{7}(?:v\d+)?)$/
+    ];
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      // arXiv registers one DOI per paper, so a version suffix never resolves.
+      if (match) return match[1].trim().replace(/v\d+$/i, '');
+    }
+    return '';
+  }
+
+  function isArxivDoi(value) {
+    return /^10\.48550\/arxiv\./i.test(String(value || ''));
+  }
+
   function cleanDoi(value) {
-    return String(value || '')
+    const doi = String(value || '')
       .trim()
       .replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')
       .replace(/^doi:\s*/i, '')
       .trim();
+    // Restore arXiv's mixed-case spelling and drop any version suffix.
+    if (isArxivDoi(doi)) return ARXIV_DOI_PREFIX + doi.slice(ARXIV_DOI_PREFIX.length).replace(/v\d+$/i, '');
+    if (/^10\./.test(doi)) return doi;
+    const id = arxivId(doi);
+    return id ? ARXIV_DOI_PREFIX + id : doi;
   }
 
   function crossrefDate(message) {
@@ -69,40 +97,119 @@
     return parts.map((part, index) => index === 0 ? String(part) : String(part).padStart(2, '0')).join('-');
   }
 
+  function crossrefCitation(doi, message) {
+    return {
+      doi: message.DOI || doi,
+      title: Array.isArray(message.title) ? message.title[0] || '' : '',
+      authors: Array.isArray(message.author)
+        ? message.author.map((author) => [author.given, author.family].filter(Boolean).join(' ')).filter(Boolean).join(', ')
+        : '',
+      venue: Array.isArray(message['container-title']) ? message['container-title'][0] || '' : '',
+      publicationDate: crossrefDate(message),
+      url: message.URL || ''
+    };
+  }
+
+  function dataciteDate(attributes) {
+    const dates = Array.isArray(attributes.dates) ? attributes.dates : [];
+    const earliest = (type) => dates
+      .filter((entry) => entry && entry.date && String(entry.dateType).toLowerCase() === type)
+      .map((entry) => String(entry.date).trim())
+      .sort()[0] || '';
+    const asDate = (raw) => {
+      const match = String(raw || '').match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?/);
+      return match ? [match[1], match[2], match[3]].filter(Boolean).join('-') : '';
+    };
+    // arXiv records a year-only "Issued" date, so take whichever entry is most
+    // precise: the v1 submission is the day the preprint actually appeared.
+    const candidates = [
+      earliest('issued'), earliest('submitted'), earliest('available'), earliest('created'),
+      attributes.published, attributes.publicationYear
+    ].map(asDate).filter(Boolean);
+    return candidates.find((date) => date.length === 10)
+      || candidates.find((date) => date.length === 7)
+      || candidates[0] || '';
+  }
+
+  function dataciteAuthor(creator) {
+    if (!creator) return '';
+    // givenName/familyName give "Ada Lovelace"; name is usually "Lovelace, Ada".
+    const named = [creator.givenName, creator.familyName].filter(Boolean).join(' ').trim();
+    return named || String(creator.name || '').trim();
+  }
+
+  function dataciteCitation(doi, attributes) {
+    const publisher = attributes.publisher && typeof attributes.publisher === 'object'
+      ? attributes.publisher.name
+      : attributes.publisher;
+    const titles = Array.isArray(attributes.titles) ? attributes.titles : [];
+    return {
+      doi: attributes.doi || doi,
+      title: titles[0] ? String(titles[0].title || '') : '',
+      authors: Array.isArray(attributes.creators)
+        ? attributes.creators.map(dataciteAuthor).filter(Boolean).join(', ')
+        : '',
+      venue: (attributes.container && attributes.container.title) || publisher || '',
+      publicationDate: dataciteDate(attributes),
+      url: attributes.url || ''
+    };
+  }
+
+  async function fetchRecord(url) {
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`Lookup failed with status ${response.status}.`);
+    return response.json();
+  }
+
+  async function lookupCrossref(doi) {
+    const payload = await fetchRecord(`https://api.crossref.org/works/${encodeURIComponent(doi)}`);
+    if (!payload) return null;
+    const message = payload.message;
+    if (!message || typeof message !== 'object') throw new Error('Crossref returned an unexpected response.');
+    return crossrefCitation(doi, message);
+  }
+
+  async function lookupDatacite(doi) {
+    const payload = await fetchRecord(`https://api.datacite.org/dois/${encodeURIComponent(doi)}`);
+    if (!payload) return null;
+    const attributes = payload.data && payload.data.attributes;
+    if (!attributes || typeof attributes !== 'object') throw new Error('DataCite returned an unexpected response.');
+    return dataciteCitation(doi, attributes);
+  }
+
   async function lookupDoi() {
     const doi = cleanDoi(ui.doi.value);
     if (!doi) {
-      setMessage(ui.lookupMsg, 'Enter a DOI first.', 'error');
+      setMessage(ui.lookupMsg, 'Enter a DOI or arXiv ID first.', 'error');
       ui.doi.focus();
       return;
     }
 
+    ui.doi.value = doi;
     ui.lookup.disabled = true;
     ui.lookup.textContent = 'Looking up…';
     setMessage(ui.lookupMsg, 'Looking up citation details…');
     try {
-      const response = await fetch(`https://api.crossref.org/works/${encodeURIComponent(doi)}`, {
-        headers: { Accept: 'application/json' }
-      });
-      if (!response.ok) throw new Error(response.status === 404 ? 'No Crossref record was found for that DOI.' : 'Crossref lookup failed.');
-      const payload = await response.json();
-      const message = payload && payload.message;
-      if (!message || typeof message !== 'object') throw new Error('Crossref returned an unexpected response.');
+      // arXiv registers its DOIs with DataCite, so Crossref never holds them.
+      let citation = isArxivDoi(doi) ? null : await lookupCrossref(doi).catch(() => null);
+      if (!citation) citation = await lookupDatacite(doi);
+      if (!citation) {
+        throw new Error(isArxivDoi(doi)
+          ? 'No arXiv record was found for that identifier.'
+          : 'No Crossref or DataCite record was found for that DOI.');
+      }
 
-      const authors = Array.isArray(message.author)
-        ? message.author.map((author) => [author.given, author.family].filter(Boolean).join(' ')).filter(Boolean).join(', ')
-        : '';
-      ui.doi.value = message.DOI || doi;
-      if (Array.isArray(message.title) && message.title[0]) ui.title.value = message.title[0];
-      if (authors) ui.authors.value = authors;
-      if (Array.isArray(message['container-title']) && message['container-title'][0]) ui.venue.value = message['container-title'][0];
-      const publicationDate = crossrefDate(message);
-      if (publicationDate) ui.publicationDate.value = publicationDate;
-      ui.url.value = message.URL || `https://doi.org/${message.DOI || doi}`;
+      ui.doi.value = cleanDoi(citation.doi) || doi;
+      if (citation.title) ui.title.value = citation.title;
+      if (citation.authors) ui.authors.value = citation.authors;
+      if (citation.venue) ui.venue.value = citation.venue;
+      if (citation.publicationDate) ui.publicationDate.value = citation.publicationDate;
+      ui.url.value = citation.url || `https://doi.org/${ui.doi.value}`;
       setMessage(ui.lookupMsg, 'Citation details filled. Review them before saving.', 'success');
       if (!ui.readDate.value) ui.readDate.value = todayISO();
     } catch (error) {
-      setMessage(ui.lookupMsg, `${error.message || 'DOI lookup failed'} You can enter the details manually.`, 'error');
+      setMessage(ui.lookupMsg, `${error.message || 'Lookup failed.'} You can enter the details manually.`, 'error');
     } finally {
       ui.lookup.disabled = false;
       ui.lookup.textContent = 'Fill from DOI';

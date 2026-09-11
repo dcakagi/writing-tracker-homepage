@@ -10,6 +10,7 @@
     { id: "reading", label: "Paper reading", feature: "reading" },
     { id: "todo", label: "To-do list", feature: "todo" },
     { id: "hackernews", label: "Hacker News", feature: "hackernews" },
+    { id: "githubtrending", label: "GitHub trending", feature: "githubtrending" },
     { id: "bookmarks", label: "Bookmarks", feature: "bookmarks" },
     { id: "dashboard", label: "Dashboard widgets", feature: "dashboard" }
   ];

@@ -17,8 +17,8 @@ active.
 Select **Customize** in the page header. The panel can edit:
 
 - Site title and favicon
-- Section and dashboard-widget visibility and order, including the to-do list
-  and the Hacker News feed
+- Section and dashboard-widget visibility and order, including the to-do list,
+  the Hacker News feed, and the GitHub trending list
 - Timer label and date
 - Dashboard-backup reminder interval
 - Weather location, coordinates, and units
@@ -58,7 +58,7 @@ window.APP_CONFIG = {
     favicon: "https://emojiapi.dev/api/v1/rocket/64.png",
   },
 
-  sectionOrder: ["writing", "reading", "todo", "hackernews", "bookmarks", "dashboard"],
+  sectionOrder: ["writing", "reading", "todo", "hackernews", "githubtrending", "bookmarks", "dashboard"],
 
   dashboardWidgetOrder: [
     "timer",
@@ -74,6 +74,7 @@ window.APP_CONFIG = {
     reading: true,
     todo: true,
     hackernews: true,
+  githubtrending: true,
     bookmarks: true,
     timer: true,
     weeklyWeather: true,
@@ -150,7 +151,7 @@ string.
 `sectionOrder` controls the page's top-level groups:
 
 ```js
-sectionOrder: ["writing", "reading", "todo", "hackernews", "bookmarks", "dashboard"],
+sectionOrder: ["writing", "reading", "todo", "hackernews", "githubtrending", "bookmarks", "dashboard"],
 ```
 
 Move an identifier earlier or later in the array to move that section. Keep
@@ -190,6 +191,7 @@ features: {
   reading: true,
   todo: true,
   hackernews: true,
+  githubtrending: true,
   bookmarks: true,
   timer: false,
   weeklyWeather: true,
@@ -246,6 +248,41 @@ refetch; **Refresh** always fetches a fresh list. If the API cannot be reached,
 the last cached list stays on screen with a note explaining why.
 
 Set `features.hackernews` to `false` to hide the section and stop the requests.
+
+## The GitHub trending section
+
+The GitHub trending section is a top-level section with the identifier
+`githubtrending` and the feature flag `githubtrending`. It lists repositories
+that have gathered the most stars recently, each linking to the repository on
+[github.com](https://github.com), with its description, star and fork counts,
+primary language, and last push.
+
+GitHub publishes no trending API, so the list is approximated with the public
+GitHub search API at `https://api.github.com`: repositories created inside a
+recent window, ordered by stars. Tune the window and the list in the `github`
+block:
+
+```js
+github: {
+  // Days back to search. Shorter is fresher; longer favors repositories
+  // that have had time to gather stars.
+  days: 7,
+  // Number of repositories listed, up to 25.
+  count: 10,
+  // Optional language filter, such as "python" or "c++". Leave empty for all.
+  language: "",
+},
+```
+
+Requests are unauthenticated, so GitHub receives ordinary request information
+such as an IP address, and no homepage data is sent to it. GitHub rate limits
+unauthenticated searches to ten per minute; the list is cached in this browser
+for thirty minutes so a page reload does not refetch, and **Refresh** always
+fetches a fresh list. If the API cannot be reached or the rate limit is hit,
+the last cached list stays on screen with a note explaining why.
+
+Set `features.githubtrending` to `false` to hide the section and stop the
+requests.
 
 ## Set the timer
 

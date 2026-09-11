@@ -10,7 +10,7 @@ window.APP_CONFIG = {
     favicon: "https://emojiapi.dev/api/v1/rocket/64.png"
   },
 
-  sectionOrder: ["writing", "reading", "todo", "hackernews", "bookmarks", "dashboard"],
+  sectionOrder: ["writing", "reading", "todo", "hackernews", "githubtrending", "bookmarks", "dashboard"],
   dashboardWidgetOrder: [
     "timer",
     "weekly-weather",
@@ -25,6 +25,7 @@ window.APP_CONFIG = {
     reading: true,
     todo: true,
     hackernews: true,
+    githubtrending: true,
     bookmarks: true,
     timer: true,
     weeklyWeather: true,
@@ -42,6 +43,15 @@ window.APP_CONFIG = {
   writing: {
     // Number of days between local backup reminders.
     reminderInterval: 14
+  },
+
+  github: {
+    // GitHub publishes no trending API, so this approximates it with the
+    // search API: repositories created in the last `days` days, most stars
+    // first. Set `language` to something like "python" to narrow the list.
+    days: 7,
+    count: 10,
+    language: ""
   },
 
   analytics: {

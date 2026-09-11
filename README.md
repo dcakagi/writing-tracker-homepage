@@ -1,8 +1,8 @@
 # Personal Writing Tracker Homepage
 
 A configurable, no-build dashboard for writing sessions and goals, papers read,
-bookmarks, habits, a to-do list, the Hacker News top ten, weather, quotes, and a
-personal countdown/count-up timer.
+bookmarks, habits, a to-do list, the Hacker News top ten, trending GitHub
+repositories, weather, quotes, and a personal countdown/count-up timer.
 
 Try the shared version at
 [bradymoon.com/writing-tracker-homepage](https://bradymoon.com/writing-tracker-homepage/).
@@ -96,7 +96,7 @@ The **Customize** panel currently supports:
 - Countdown/count-up timer label and date
 - Dashboard-backup reminder interval
 - Main-section visibility and order, including the paper tracker, the to-do
-  list, and the Hacker News feed
+  list, the Hacker News feed, and the GitHub trending list
 - Dashboard-widget visibility and order
 - Weather location, coordinates, and units
 - Quotes
@@ -167,6 +167,9 @@ page to its public defaults.
   metadata. Manual paper entry makes no lookup request.
 - The Hacker News section reads the public Hacker News API and sends it no
   homepage data. Set `features.hackernews` to `false` to stop those requests.
+- The GitHub trending section reads the public GitHub search API without
+  authentication and sends it no homepage data. Set `features.githubtrending`
+  to `false` to stop those requests.
 - The shared site redirects HTTP to HTTPS through Cloudflare. A self-hosted fork
   should also enforce HTTPS before enabling password sign-in.
 
@@ -185,6 +188,7 @@ addresses, URLs, coordinates, credentials, and identifiers.
 │   ├── paper-tracker.js       # Paper logging, DOI lookup, calendar, archive
 │   ├── todo-list.js           # To-do items, statuses, and notes
 │   ├── hacker-news.js         # Hacker News top-ten feed
+│   ├── github-trending.js     # Trending GitHub repositories
 │   └── ...                    # Widgets, storage, and page behavior
 ├── supabase/user_state.sql    # Optional cloud-sync schema and RLS
 ├── CUSTOMIZATION.md           # Browser and file configuration reference

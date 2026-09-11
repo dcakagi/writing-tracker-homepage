@@ -97,7 +97,7 @@
     const sectionsRoot = document.getElementById("homepage-sections");
     reorderChildren(sectionsRoot, "data-section-id", config.sectionOrder);
 
-    ["dashboard", "writing", "reading", "todo", "hackernews", "bookmarks"].forEach((sectionId) => {
+    ["dashboard", "writing", "reading", "todo", "hackernews", "githubtrending", "bookmarks"].forEach((sectionId) => {
       setElementEnabled(
         document.querySelector(`[data-section-id="${sectionId}"]`),
         getFeature(sectionId, true)
@@ -342,6 +342,9 @@
     }
     if (getFeature("hackernews", true) && window.initializeHackerNews) {
       window.initializeHackerNews();
+    }
+    if (getFeature("githubtrending", true) && window.initializeGithubTrending) {
+      window.initializeGithubTrending();
     }
   });
 

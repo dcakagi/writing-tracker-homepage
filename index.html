@@ -454,6 +454,23 @@
     </div>
   </section>
 
+  <!-- GitHub Trending Section -->
+  <section data-section-id="githubtrending" class="w-full max-w-6xl mx-auto">
+    <div class="rounded-2xl bg-white p-6 shadow-lg">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div id="gh-window" class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">New repositories from the last 7 days</div>
+          <h2 class="text-xl font-semibold text-gray-800">Trending on GitHub</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="gh-status" class="text-sm text-gray-500" aria-live="polite">Loading repositories...</span>
+          <button id="gh-refresh" type="button" class="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:cursor-wait disabled:opacity-60">Refresh</button>
+        </div>
+      </div>
+      <ol id="gh-list" class="mt-5 space-y-2"></ol>
+    </div>
+  </section>
+
   <section data-section-id="bookmarks" class="w-full max-w-6xl mx-auto">
     <div class="bg-white shadow-lg rounded-2xl p-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Bookmarks</h2>
@@ -665,6 +682,7 @@
   <script src="js/habit-tracker.js" defer></script>
   <script src="js/todo-list.js" defer></script>
   <script src="js/hacker-news.js" defer></script>
+  <script src="js/github-trending.js" defer></script>
   <script src="js/analytics.js" defer></script>
 </body>
 </html>

@@ -46,12 +46,12 @@ window.APP_CONFIG = {
   },
 
   github: {
-    // GitHub publishes no trending API, so this approximates it with the
-    // search API: repositories created in the last `days` days, most stars
-    // first. Set `language` to something like "python" to narrow the list.
-    days: 7,
+    // Number of repositories listed per tab, up to 25.
     count: 10,
-    language: ""
+    // Optional language filter, such as "python". Leave empty for all.
+    language: "",
+    // Tab shown first: daily, weekly, monthly, new-7, or new-30.
+    defaultView: "weekly"
   },
 
   analytics: {

@@ -168,8 +168,10 @@ page to its public defaults.
 - The Hacker News section reads the public Hacker News API and sends it no
   homepage data. Set `features.hackernews` to `false` to stop those requests.
 - The GitHub trending section reads the public GitHub search API without
-  authentication and sends it no homepage data. Set `features.githubtrending`
-  to `false` to stop those requests.
+  authentication and sends it no homepage data. Its Today/This week/This month
+  tabs read a file captured during deploy instead, so they make no third-party
+  request at all. Set `features.githubtrending` to `false` to stop the
+  search requests.
 - The shared site redirects HTTP to HTTPS through Cloudflare. A self-hosted fork
   should also enforce HTTPS before enabling password sign-in.
 
@@ -188,8 +190,10 @@ addresses, URLs, coordinates, credentials, and identifiers.
 │   ├── paper-tracker.js       # Paper logging, DOI lookup, calendar, archive
 │   ├── todo-list.js           # To-do items, statuses, and notes
 │   ├── hacker-news.js         # Hacker News top-ten feed
-│   ├── github-trending.js     # Trending GitHub repositories
+│   ├── github-trending.js     # Trending and newly popular GitHub repositories
 │   └── ...                    # Widgets, storage, and page behavior
+├── scripts/
+│   └── fetch_github_trending.py  # Deploy-time capture of github.com/trending
 ├── supabase/user_state.sql    # Optional cloud-sync schema and RLS
 ├── CUSTOMIZATION.md           # Browser and file configuration reference
 ├── SUPABASE_SETUP.md          # Bring-your-own-Supabase walkthrough

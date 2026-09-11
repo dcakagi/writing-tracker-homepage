@@ -459,7 +459,7 @@
     <div class="rounded-2xl bg-white p-6 shadow-lg">
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <div id="gh-window" class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">New repositories from the last 7 days</div>
+          <div id="gh-window" class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">Most stars gained this week</div>
           <h2 class="text-xl font-semibold text-gray-800">Trending on GitHub</h2>
         </div>
         <div class="flex items-center gap-3">
@@ -467,6 +467,7 @@
           <button id="gh-refresh" type="button" class="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:cursor-wait disabled:opacity-60">Refresh</button>
         </div>
       </div>
+      <div id="gh-tabs" role="tablist" aria-label="Trending view" class="mt-4 flex flex-wrap items-center gap-1.5"></div>
       <ol id="gh-list" class="mt-5 space-y-2"></ol>
     </div>
   </section>

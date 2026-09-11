@@ -252,34 +252,61 @@ Set `features.hackernews` to `false` to hide the section and stop the requests.
 ## The GitHub trending section
 
 The GitHub trending section is a top-level section with the identifier
-`githubtrending` and the feature flag `githubtrending`. It lists repositories
-that have gathered the most stars recently, each linking to the repository on
-[github.com](https://github.com), with its description, star and fork counts,
-primary language, and last push.
+`githubtrending` and the feature flag `githubtrending`. Tabs switch between two
+kinds of list:
 
-GitHub publishes no trending API, so the list is approximated with the public
-GitHub search API at `https://api.github.com`: repositories created inside a
-recent window, ordered by stars. Tune the window and the list in the `github`
-block:
+| Tab | Shows | Source |
+| --- | --- | --- |
+| Today / This week / This month | Repositories of any age gaining stars fastest, with the stars gained | Captured at deploy time |
+| New · 7d / New · 30d | Repositories created in the last 7 or 30 days, most stars first | Live GitHub search API |
+
+The selected tab is remembered in this browser.
+
+### Why two sources
+
+The "New" tabs come straight from the public GitHub search API, which the page
+queries as you use it.
+
+The trending tabs cannot work that way. GitHub publishes no trending API;
+`github.com/trending` is the only public source for how many stars a repository
+has gained recently, and it sends no CORS header, so a browser cannot read it.
+Deriving the numbers from GitHub's public events firehose is no longer viable
+either — that feed now carries a tiny fraction of real activity, which is why
+the third-party trending APIs that relied on it have gone dark or returned
+empty results.
+
+So `scripts/fetch_github_trending.py` reads `github.com/trending` during the
+Pages deploy and writes `data/github-trending.json` into the published site.
+The page then loads that file from its own origin. The deploy workflow also
+runs on a six-hour schedule to keep the capture fresh.
+
+Two consequences worth knowing:
+
+- The trending tabs have data only on the deployed site. In a local copy the
+  file is absent and those tabs say so; the New tabs still work.
+- The capture reads GitHub's HTML. If GitHub changes that page's markup the
+  step logs a warning and leaves the affected list empty, rather than failing
+  the deploy. `data/github-trending.json` is not committed, so the repository
+  never carries a stale copy.
+
+### Settings
 
 ```js
 github: {
-  // Days back to search. Shorter is fresher; longer favors repositories
-  // that have had time to gather stars.
-  days: 7,
-  // Number of repositories listed, up to 25.
+  // Number of repositories listed per tab, up to 25.
   count: 10,
-  // Optional language filter, such as "python" or "c++". Leave empty for all.
+  // Optional language filter, such as "python". Applies to every tab.
   language: "",
+  // Tab shown first: daily, weekly, monthly, new-7, or new-30.
+  defaultView: "weekly",
 },
 ```
 
-Requests are unauthenticated, so GitHub receives ordinary request information
-such as an IP address, and no homepage data is sent to it. GitHub rate limits
-unauthenticated searches to ten per minute; the list is cached in this browser
-for thirty minutes so a page reload does not refetch, and **Refresh** always
-fetches a fresh list. If the API cannot be reached or the rate limit is hit,
-the last cached list stays on screen with a note explaining why.
+Requests to GitHub are unauthenticated, so it receives ordinary request
+information such as an IP address, and no homepage data is sent to it. GitHub
+rate limits unauthenticated searches to ten per minute; each New tab is cached
+in this browser for thirty minutes, and **Refresh** always refetches the
+current tab.
 
 Set `features.githubtrending` to `false` to hide the section and stop the
 requests.

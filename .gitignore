@@ -3,3 +3,8 @@
 .env.*
 !.env.example
 supabase/.temp/
+
+# Captured at deploy time by scripts/fetch_github_trending.py; not committed so
+# the repository does not carry a stale copy.
+data/github-trending.json
+__pycache__/

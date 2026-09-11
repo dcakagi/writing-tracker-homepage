@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    # Refresh the captured GitHub trending lists four times a day. GitHub
+    # disables scheduled workflows on repositories with no activity for 60
+    # days; re-enable it from the Actions tab if that happens.
+    - cron: "0 */6 * * *"
 
 permissions:
   contents: read
@@ -46,6 +51,9 @@ jobs:
           else
             echo "Build check: measurementId was populated in artifact."
           fi
+
+      - name: Capture GitHub trending lists
+        run: python3 scripts/fetch_github_trending.py
 
       - name: Configure Pages
         uses: actions/configure-pages@v6

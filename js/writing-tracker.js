@@ -50,7 +50,7 @@ let wtStatsCache = {
 };
 
 // DOM Elements
-let wtTimerDisplay, wtStartBtn, wtStopBtn, wtSessionMsg;
+let wtTimerDisplay, wtStartBtn, wtPauseBtn, wtStopBtn, wtSessionMsg;
 let wtManualMinutes, wtAddMinutesBtn;
 let wtExportBtn, wtImportInput, wtImportMsg;
 let wtEditModal, wtEditForm, wtEditDateLabel, wtEditCurrentValue, wtEditHours, wtEditMinutes, wtEditMsg;
@@ -301,12 +301,18 @@ function wtLoadActiveTimer() {
   if (activeTimer) {
     try {
       const timerData = JSON.parse(activeTimer);
-      wtStartTime = new Date(timerData.startTime);
+      const resumedAt = timerData.startTime ? new Date(timerData.startTime) : null;
+      wtStartTime = resumedAt && !Number.isNaN(resumedAt.getTime()) ? resumedAt : null;
       wtAccumulatedTime = timerData.accumulated || 0;
       if (wtSessionNote && typeof timerData.note === 'string') wtSessionNote.value = timerData.note;
 
-      wtTimerInterval = setInterval(wtUpdateTimerDisplay, 1000);
-      wtSetTimerRunningState();
+      if (wtStartTime) {
+        wtTimerInterval = setInterval(wtUpdateTimerDisplay, 1000);
+      } else if (wtAccumulatedTime <= 0) {
+        // Neither running nor holding banked time: nothing to restore.
+        localStorage.removeItem(WT_CONFIG.activeTimerKey);
+      }
+      wtUpdateTimerControls();
     } catch (error) {
       localStorage.removeItem(WT_CONFIG.activeTimerKey);
     }
@@ -314,9 +320,11 @@ function wtLoadActiveTimer() {
 }
 
 function wtSaveActiveTimer() {
-  if (wtStartTime) {
+  // A paused timer has no start time but still holds banked seconds, and it
+  // has to survive a reload the same way a running one does.
+  if (wtStartTime || wtAccumulatedTime > 0) {
     localStorage.setItem(WT_CONFIG.activeTimerKey, JSON.stringify({
-      startTime: wtStartTime.toISOString(),
+      startTime: wtStartTime ? wtStartTime.toISOString() : null,
       accumulated: wtAccumulatedTime,
       note: wtSessionNote ? wtSessionNote.value.slice(0, 4000) : ''
     }));
@@ -339,18 +347,27 @@ function wtUpdateTimerDisplay() {
   wtTimerDisplay.textContent = `${minutes}:${('0'+seconds).slice(-2)}`;
 }
 
-function wtSetTimerRunningState() {
-  wtStartBtn.disabled = true;
-  wtStartBtn.className = "bg-blue-300 text-white px-6 py-2 rounded-lg font-medium cursor-not-allowed";
-  wtStopBtn.disabled = false;
-  wtStopBtn.className = "bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors";
+const WT_BUTTON_ENABLED = "bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors";
+const WT_BUTTON_DISABLED = "bg-blue-300 text-white px-6 py-2 rounded-lg font-medium cursor-not-allowed";
+
+function wtSetButtonEnabled(button, enabled) {
+  if (!button) return;
+  button.disabled = !enabled;
+  button.className = enabled ? WT_BUTTON_ENABLED : WT_BUTTON_DISABLED;
 }
 
-function wtSetTimerStoppedState() {
-  wtStartBtn.disabled = false;
-  wtStartBtn.className = "bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors";
-  wtStopBtn.disabled = true;
-  wtStopBtn.className = "bg-blue-300 text-white px-6 py-2 rounded-lg font-medium cursor-not-allowed";
+function wtIsTimerPaused() {
+  return !wtStartTime && wtAccumulatedTime > 0;
+}
+
+function wtUpdateTimerControls() {
+  const running = Boolean(wtStartTime);
+  const paused = wtIsTimerPaused();
+  wtSetButtonEnabled(wtStartBtn, !running);
+  wtSetButtonEnabled(wtPauseBtn, running);
+  // Stop stays available while paused so banked time can still be saved.
+  wtSetButtonEnabled(wtStopBtn, running || paused);
+  if (wtStartBtn) wtStartBtn.textContent = paused ? 'Resume' : 'Start';
 }
 
 /* ===========================
@@ -1455,30 +1472,51 @@ function wtSetupEventHandlers() {
   // Timer controls
   wtStartBtn.onclick = () => {
     if (!wtStartTime) {
+      const resuming = wtIsTimerPaused();
       wtStartTime = new Date();
       wtTimerInterval = setInterval(wtUpdateTimerDisplay, 100);
       wtSaveActiveTimer();
-      wtSetTimerRunningState();
+      wtUpdateTimerControls();
+      // Clear the pause notice, but leave a "Session saved!" message alone.
+      if (resuming && wtSessionMsg && wtSessionMsg.textContent.startsWith('Paused')) {
+        wtShowSessionMessage('');
+      }
     }
   };
 
   if (wtSessionNote) {
     wtSessionNote.addEventListener('input', () => {
-      if (wtStartTime) wtSaveActiveTimer();
+      // Notes typed while paused have to be kept as well.
+      if (wtStartTime || wtAccumulatedTime > 0) wtSaveActiveTimer();
     });
   }
 
+  wtPauseBtn.onclick = () => {
+    if (!wtStartTime) return;
+    wtAccumulatedTime = wtGetCurrentTime();
+    wtStartTime = null;
+    clearInterval(wtTimerInterval);
+    wtTimerInterval = null;
+    wtSaveActiveTimer();
+    wtUpdateTimerControls();
+    wtUpdateTimerDisplay();
+    wtShowSessionMessage('Paused. Resume to keep writing, or Stop to save this session.');
+  };
+
   wtStopBtn.onclick = () => {
+    if (!wtStartTime && !wtIsTimerPaused()) return;
     if (wtStartTime) {
-      const finalTime = wtGetCurrentTime();
-      wtAccumulatedTime = finalTime;
+      wtAccumulatedTime = wtGetCurrentTime();
       wtStartTime = null;
       clearInterval(wtTimerInterval);
       wtTimerInterval = null;
-      wtSaveActiveTimer();
-      wtSetTimerStoppedState();
-      wtSaveSession();
     }
+    // Save first: this banks the time and clears wtAccumulatedTime, so the
+    // active-timer entry is then removed rather than left holding a stale
+    // paused session.
+    wtSaveSession();
+    wtSaveActiveTimer();
+    wtUpdateTimerControls();
   };
 
   // Manual time addition
@@ -1601,6 +1639,7 @@ function initializeWritingTracker() {
   // Cache DOM elements
   wtTimerDisplay = document.getElementById('wt-timerDisplay');
   wtStartBtn = document.getElementById('wt-startBtn');
+  wtPauseBtn = document.getElementById('wt-pauseBtn');
   wtStopBtn = document.getElementById('wt-stopBtn');
   wtSessionMsg = document.getElementById('wt-sessionMsg');
   wtManualMinutes = document.getElementById('wt-manualMinutes');

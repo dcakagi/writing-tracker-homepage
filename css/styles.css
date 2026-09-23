@@ -406,6 +406,10 @@ button {
   overflow-wrap: anywhere;
 }
 
+#pt-archive {
+  scrollbar-width: thin;
+}
+
 .paper-archive-card,
 #wt-editModal > div {
   scrollbar-gutter: stable;
